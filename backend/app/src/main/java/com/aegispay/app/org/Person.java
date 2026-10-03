@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.Filter;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
@@ -29,6 +30,12 @@ public class Person extends TenantEntity {
 
     @Column(name = "exemption_status", nullable = false)
     private String exemptionStatus;
+
+    @Column(name = "worker_type", nullable = false)
+    private String workerType = "EMPLOYEE";
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 
     public String getExternalEmployeeCode() {
         return externalEmployeeCode;
@@ -62,11 +69,35 @@ public class Person extends TenantEntity {
         this.hireDate = hireDate;
     }
 
+    public LocalDate getTerminationDate() {
+        return terminationDate;
+    }
+
+    public void setTerminationDate(LocalDate terminationDate) {
+        this.terminationDate = terminationDate;
+    }
+
     public String getExemptionStatus() {
         return exemptionStatus;
     }
 
     public void setExemptionStatus(String exemptionStatus) {
         this.exemptionStatus = exemptionStatus;
+    }
+
+    public String getWorkerType() {
+        return workerType;
+    }
+
+    public void setWorkerType(String workerType) {
+        this.workerType = workerType;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(Instant deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

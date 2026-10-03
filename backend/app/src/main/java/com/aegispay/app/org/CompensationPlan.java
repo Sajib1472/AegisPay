@@ -6,22 +6,28 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.Filter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "assignment")
+@Table(name = "compensation_plan")
 @Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
-public class Assignment extends TenantEntity {
+public class CompensationPlan extends TenantEntity {
 
     @Column(name = "person_id", nullable = false)
     private UUID personId;
 
-    @Column(name = "location_id", nullable = false)
-    private UUID locationId;
+    @Column(name = "plan_type", nullable = false)
+    private String planType;
 
-    @Column(name = "job_code_id", nullable = false)
-    private UUID jobCodeId;
+    private BigDecimal percent;
+
+    @Column(name = "flat_amount")
+    private BigDecimal flatAmount;
+
+    @Column(nullable = false)
+    private boolean discretionary;
 
     @Column(name = "effective_from", nullable = false)
     private LocalDate effectiveFrom;
@@ -37,20 +43,36 @@ public class Assignment extends TenantEntity {
         this.personId = personId;
     }
 
-    public UUID getLocationId() {
-        return locationId;
+    public String getPlanType() {
+        return planType;
     }
 
-    public void setLocationId(UUID locationId) {
-        this.locationId = locationId;
+    public void setPlanType(String planType) {
+        this.planType = planType;
     }
 
-    public UUID getJobCodeId() {
-        return jobCodeId;
+    public BigDecimal getPercent() {
+        return percent;
     }
 
-    public void setJobCodeId(UUID jobCodeId) {
-        this.jobCodeId = jobCodeId;
+    public void setPercent(BigDecimal percent) {
+        this.percent = percent;
+    }
+
+    public BigDecimal getFlatAmount() {
+        return flatAmount;
+    }
+
+    public void setFlatAmount(BigDecimal flatAmount) {
+        this.flatAmount = flatAmount;
+    }
+
+    public boolean isDiscretionary() {
+        return discretionary;
+    }
+
+    public void setDiscretionary(boolean discretionary) {
+        this.discretionary = discretionary;
     }
 
     public LocalDate getEffectiveFrom() {

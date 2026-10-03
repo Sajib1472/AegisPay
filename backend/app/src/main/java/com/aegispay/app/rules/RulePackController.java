@@ -18,14 +18,21 @@ import java.util.UUID;
 public class RulePackController {
 
     private final RulePackRepository packs;
+    private final RulePackDocumentRepository documents;
 
-    public RulePackController(RulePackRepository packs) {
+    public RulePackController(RulePackRepository packs, RulePackDocumentRepository documents) {
         this.packs = packs;
+        this.documents = documents;
     }
 
     @GetMapping
     public List<RulePackRecord> listPublished() {
         return packs.findByStatusOrderByJurisdictionAscVersionAsc("PUBLISHED");
+    }
+
+    @GetMapping("/{id}/documents")
+    public List<RulePackDocument> listDocuments(@PathVariable UUID id) {
+        return documents.findByRulePackId(id);
     }
 
     @PatchMapping("/{id}/status")

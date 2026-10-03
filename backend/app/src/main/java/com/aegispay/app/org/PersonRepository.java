@@ -7,9 +7,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface PersonRepository extends JpaRepository<Person, UUID> {
-    List<Person> findByTenantId(UUID tenantId);
+    List<Person> findByTenantIdAndDeletedAtIsNull(UUID tenantId);
 
-    Optional<Person> findByTenantIdAndExternalEmployeeCode(UUID tenantId, String code);
+    Optional<Person> findByTenantIdAndExternalEmployeeCodeAndDeletedAtIsNull(UUID tenantId, String code);
 
-    long countByTenantId(UUID tenantId);
+    long countByTenantIdAndDeletedAtIsNull(UUID tenantId);
 }

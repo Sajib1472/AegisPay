@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface LocationRepository extends JpaRepository<Location, UUID> {
-    List<Location> findByTenantId(UUID tenantId);
+    List<Location> findByTenantIdAndDeletedAtIsNull(UUID tenantId);
 
-    long countByTenantId(UUID tenantId);
+    long countByTenantIdAndDeletedAtIsNull(UUID tenantId);
 }

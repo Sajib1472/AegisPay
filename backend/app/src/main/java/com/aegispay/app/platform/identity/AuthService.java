@@ -1,5 +1,7 @@
 package com.aegispay.app.platform.identity;
 
+import com.aegispay.app.billing.Subscription;
+import com.aegispay.app.billing.SubscriptionRepository;
 import com.aegispay.app.org.TenantPolicyEntity;
 import com.aegispay.app.org.TenantPolicyRepository;
 import com.aegispay.app.platform.tenancy.TenantContext;
@@ -19,6 +21,7 @@ public class AuthService {
     private final TenantRepository tenants;
     private final AppUserRepository users;
     private final TenantPolicyRepository policies;
+    private final SubscriptionRepository subscriptions;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
@@ -26,12 +29,14 @@ public class AuthService {
             TenantRepository tenants,
             AppUserRepository users,
             TenantPolicyRepository policies,
+            SubscriptionRepository subscriptions,
             PasswordEncoder passwordEncoder,
             JwtService jwtService
     ) {
         this.tenants = tenants;
         this.users = users;
         this.policies = policies;
+        this.subscriptions = subscriptions;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
     }
@@ -65,6 +70,13 @@ public class AuthService {
         TenantPolicyEntity policy = new TenantPolicyEntity();
         policy.setTenantId(tenant.getId());
         policies.save(policy);
+
+        Subscription subscription = new Subscription();
+        subscription.setTenantId(tenant.getId());
+        subscription.setPlan("PILOT");
+        subscription.setStatus("TRIALING");
+        subscription.setCurrentPeriodEnd(tenant.getTrialEndsAt());
+        subscriptions.save(subscription);
 
         return toResponse(owner, tenant);
     }

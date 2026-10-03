@@ -75,7 +75,7 @@ public class PunchImportService {
                 continue;
             }
             String code = cols[0].trim();
-            Person person = people.findByTenantIdAndExternalEmployeeCode(tenantId, code).orElse(null);
+            Person person = people.findByTenantIdAndExternalEmployeeCodeAndDeletedAtIsNull(tenantId, code).orElse(null);
             if (person == null) {
                 problems.add("Unknown employee_code " + code + " on row " + (i + 1));
                 continue;

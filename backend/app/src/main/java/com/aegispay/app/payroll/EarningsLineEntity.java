@@ -21,6 +21,9 @@ public class EarningsLineEntity extends TenantEntity {
     @Column(name = "pay_run_id", nullable = false)
     private UUID payRunId;
 
+    @Column(name = "pay_period_id")
+    private UUID payPeriodId;
+
     @Column(name = "person_id", nullable = false)
     private UUID personId;
 
@@ -43,8 +46,23 @@ public class EarningsLineEntity extends TenantEntity {
     @Column(nullable = false)
     private Map<String, Object> explanation = Map.of();
 
+    @Column(name = "reversing_of")
+    private UUID reversingOf;
+
+    public UUID getPayRunId() {
+        return payRunId;
+    }
+
     public void setPayRunId(UUID payRunId) {
         this.payRunId = payRunId;
+    }
+
+    public UUID getPayPeriodId() {
+        return payPeriodId;
+    }
+
+    public void setPayPeriodId(UUID payPeriodId) {
+        this.payPeriodId = payPeriodId;
     }
 
     public UUID getPersonId() {
@@ -101,5 +119,13 @@ public class EarningsLineEntity extends TenantEntity {
 
     public void setExplanation(Map<String, Object> explanation) {
         this.explanation = explanation;
+    }
+
+    public UUID getReversingOf() {
+        return reversingOf;
+    }
+
+    public void setReversingOf(UUID reversingOf) {
+        this.reversingOf = reversingOf;
     }
 }

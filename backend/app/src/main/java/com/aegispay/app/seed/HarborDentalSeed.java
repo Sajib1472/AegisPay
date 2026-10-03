@@ -1,11 +1,19 @@
 package com.aegispay.app.seed;
 
+import com.aegispay.app.billing.Subscription;
+import com.aegispay.app.billing.SubscriptionRepository;
 import com.aegispay.app.org.Assignment;
 import com.aegispay.app.org.AssignmentRepository;
+import com.aegispay.app.org.CompensationPlan;
+import com.aegispay.app.org.CompensationPlanRepository;
+import com.aegispay.app.org.Employment;
+import com.aegispay.app.org.EmploymentRepository;
 import com.aegispay.app.org.JobCode;
 import com.aegispay.app.org.JobCodeRepository;
 import com.aegispay.app.org.Location;
 import com.aegispay.app.org.LocationRepository;
+import com.aegispay.app.org.LeavePolicy;
+import com.aegispay.app.org.LeavePolicyRepository;
 import com.aegispay.app.org.PayRate;
 import com.aegispay.app.org.PayRateRepository;
 import com.aegispay.app.org.Person;
@@ -35,10 +43,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
 
 @Component
 @Profile("local")
@@ -49,12 +57,16 @@ public class HarborDentalSeed implements CommandLineRunner {
     private final String ownerPassword;
     private final TenantRepository tenants;
     private final AppUserRepository users;
+    private final SubscriptionRepository subscriptions;
     private final PasswordEncoder passwordEncoder;
     private final LocationRepository locations;
     private final JobCodeRepository jobs;
     private final PersonRepository people;
+    private final EmploymentRepository employments;
     private final AssignmentRepository assignments;
     private final PayRateRepository rates;
+    private final CompensationPlanRepository compensationPlans;
+    private final LeavePolicyRepository leavePolicies;
     private final TenantPolicyRepository policies;
     private final PunchRepository punches;
     private final MealAttestationRepository attestations;
@@ -67,12 +79,16 @@ public class HarborDentalSeed implements CommandLineRunner {
             @Value("${AEGISPAY_SEED_OWNER_PASSWORD:HarborDental!demo}") String ownerPassword,
             TenantRepository tenants,
             AppUserRepository users,
+            SubscriptionRepository subscriptions,
             PasswordEncoder passwordEncoder,
             LocationRepository locations,
             JobCodeRepository jobs,
             PersonRepository people,
+            EmploymentRepository employments,
             AssignmentRepository assignments,
             PayRateRepository rates,
+            CompensationPlanRepository compensationPlans,
+            LeavePolicyRepository leavePolicies,
             TenantPolicyRepository policies,
             PunchRepository punches,
             MealAttestationRepository attestations,
@@ -84,12 +100,16 @@ public class HarborDentalSeed implements CommandLineRunner {
         this.ownerPassword = ownerPassword;
         this.tenants = tenants;
         this.users = users;
+        this.subscriptions = subscriptions;
         this.passwordEncoder = passwordEncoder;
         this.locations = locations;
         this.jobs = jobs;
         this.people = people;
+        this.employments = employments;
         this.assignments = assignments;
         this.rates = rates;
+        this.compensationPlans = compensationPlans;
+        this.leavePolicies = leavePolicies;
         this.policies = policies;
         this.punches = punches;
         this.attestations = attestations;
@@ -124,6 +144,12 @@ public class HarborDentalSeed implements CommandLineRunner {
         owner.setEmailVerified(true);
         users.save(owner);
 
+        Subscription subscription = new Subscription();
+        subscription.setTenantId(tenant.getId());
+        subscription.setPlan("GROUP");
+        subscription.setStatus("ACTIVE");
+        subscriptions.save(subscription);
+
         TenantPolicyEntity policy = new TenantPolicyEntity();
         policy.setTenantId(tenant.getId());
         policies.save(policy);
@@ -152,6 +178,24 @@ public class HarborDentalSeed implements CommandLineRunner {
         staff(jordan, la, rda, new BigDecimal("28.00"));
         staff(sam, austin, front, new BigDecimal("22.00"));
         staff(lee, la, rdh, new BigDecimal("0.00"));
+
+        CompensationPlan hygiene = new CompensationPlan();
+        hygiene.setPersonId(maria.getId());
+        hygiene.setPlanType("PRODUCTION_PERCENT_PRODUCTION");
+        hygiene.setPercent(new BigDecimal("0.3300"));
+        hygiene.setDiscretionary(false);
+        hygiene.setEffectiveFrom(LocalDate.of(2022, 3, 1));
+        compensationPlans.save(hygiene);
+
+        LeavePolicy sick = new LeavePolicy();
+        sick.setLeaveType("SICK");
+        sick.setAccrualMethod("HOURS_WORKED");
+        sick.setAccrualRate(new BigDecimal("0.0333"));
+        sick.setCapHours(new BigDecimal("80"));
+        sick.setCarryoverHours(new BigDecimal("40"));
+        sick.setStateOverlay("CA");
+        sick.setEffectiveFrom(LocalDate.of(2024, 1, 1));
+        leavePolicies.save(sick);
 
         LocalDate week = LocalDate.of(2024, 6, 3);
         ZoneId pt = ZoneId.of("America/Los_Angeles");
@@ -208,7 +252,21 @@ public class HarborDentalSeed implements CommandLineRunner {
         location.setTimeZone(tz);
         location.setJurisdictions(jurisdictions);
         location.setWageOrder("IWC-4");
+        location.setOpeningHours(clinicHours());
         return location;
+    }
+
+    private static Map<String, Object> clinicHours() {
+        Map<String, Object> hours = new LinkedHashMap<>();
+        List<List<String>> open = List.of(List.of("08:00", "18:00"));
+        hours.put("mon", open);
+        hours.put("tue", open);
+        hours.put("wed", open);
+        hours.put("thu", open);
+        hours.put("fri", open);
+        hours.put("sat", List.of());
+        hours.put("sun", List.of());
+        return hours;
     }
 
     private JobCode job(String code, String name) {
@@ -229,6 +287,13 @@ public class HarborDentalSeed implements CommandLineRunner {
     }
 
     private void staff(Person person, Location location, JobCode job, BigDecimal hourly) {
+        Employment stint = new Employment();
+        stint.setPersonId(person.getId());
+        stint.setWorkerType(person.getWorkerType());
+        stint.setExemptionStatus(person.getExemptionStatus());
+        stint.setHireDate(person.getHireDate());
+        stint.setEffectiveFrom(person.getHireDate());
+        employments.save(stint);
         Assignment assignment = new Assignment();
         assignment.setPersonId(person.getId());
         assignment.setLocationId(location.getId());

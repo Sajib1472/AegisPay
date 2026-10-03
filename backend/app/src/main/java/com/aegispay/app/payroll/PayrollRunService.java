@@ -148,12 +148,15 @@ public class PayrollRunService {
         Map<String, String> regularRates = new LinkedHashMap<>();
         Map<String, String> grossByPerson = new LinkedHashMap<>();
 
-        for (Person person : people.findByTenantId(tenantId)) {
+        for (Person person : people.findByTenantIdAndDeletedAtIsNull(tenantId)) {
             List<Punch> personPunches = punches.findByTenantIdAndPersonIdAndAdjustedAtBetweenOrderByAdjustedAt(
                     tenantId, person.getId(), from, to);
             List<RawPunch> raw = new ArrayList<>();
-            Location loc = locations.findByTenantId(tenantId).stream().findFirst().orElseThrow();
+            Location loc = locations.findByTenantIdAndDeletedAtIsNull(tenantId).stream().findFirst().orElseThrow();
             for (Punch punch : personPunches) {
+                if (punch.getVoidedAt() != null) {
+                    continue;
+                }
                 Location punchLoc = locations.findById(punch.getLocationId()).orElse(loc);
                 loc = punchLoc;
                 raw.add(new RawPunch(
@@ -330,7 +333,7 @@ public class PayrollRunService {
             String csv,
             PayRunSnapshot snapshot
     ) {
-        Set<UUID> peopleIds = people.findByTenantId(tenantId).stream().map(Person::getId).collect(Collectors.toSet());
+        Set<UUID> peopleIds = people.findByTenantIdAndDeletedAtIsNull(tenantId).stream().map(Person::getId).collect(Collectors.toSet());
         Set<UUID> lined = lineViews.stream().map(LineView::personId).collect(Collectors.toSet());
         boolean punchesAccounted = exceptionViews.stream()
                 .noneMatch(e -> e.blocker() && "UNPAIRED_PUNCH".equals(e.type()))
@@ -385,6 +388,7 @@ public class PayrollRunService {
         result.lines().forEach(line -> {
             EarningsLineEntity entity = new EarningsLineEntity();
             entity.setPayRunId(run.getId());
+            entity.setPayPeriodId(run.getPayPeriodId());
             entity.setPersonId(person.getId());
             entity.setWorkDate(line.workDate());
             entity.setBucket(line.bucket().name());

@@ -10,18 +10,24 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "assignment")
+@Table(name = "employment")
 @Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
-public class Assignment extends TenantEntity {
+public class Employment extends TenantEntity {
 
     @Column(name = "person_id", nullable = false)
     private UUID personId;
 
-    @Column(name = "location_id", nullable = false)
-    private UUID locationId;
+    @Column(name = "worker_type", nullable = false)
+    private String workerType = "EMPLOYEE";
 
-    @Column(name = "job_code_id", nullable = false)
-    private UUID jobCodeId;
+    @Column(name = "exemption_status", nullable = false)
+    private String exemptionStatus;
+
+    @Column(name = "hire_date", nullable = false)
+    private LocalDate hireDate;
+
+    @Column(name = "termination_date")
+    private LocalDate terminationDate;
 
     @Column(name = "effective_from", nullable = false)
     private LocalDate effectiveFrom;
@@ -37,20 +43,36 @@ public class Assignment extends TenantEntity {
         this.personId = personId;
     }
 
-    public UUID getLocationId() {
-        return locationId;
+    public String getWorkerType() {
+        return workerType;
     }
 
-    public void setLocationId(UUID locationId) {
-        this.locationId = locationId;
+    public void setWorkerType(String workerType) {
+        this.workerType = workerType;
     }
 
-    public UUID getJobCodeId() {
-        return jobCodeId;
+    public String getExemptionStatus() {
+        return exemptionStatus;
     }
 
-    public void setJobCodeId(UUID jobCodeId) {
-        this.jobCodeId = jobCodeId;
+    public void setExemptionStatus(String exemptionStatus) {
+        this.exemptionStatus = exemptionStatus;
+    }
+
+    public LocalDate getHireDate() {
+        return hireDate;
+    }
+
+    public void setHireDate(LocalDate hireDate) {
+        this.hireDate = hireDate;
+    }
+
+    public LocalDate getTerminationDate() {
+        return terminationDate;
+    }
+
+    public void setTerminationDate(LocalDate terminationDate) {
+        this.terminationDate = terminationDate;
     }
 
     public LocalDate getEffectiveFrom() {

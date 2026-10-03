@@ -38,6 +38,9 @@ public class AppUser extends TenantEntity {
     @Column(name = "invited_by")
     private UUID invitedBy;
 
+    @Column(name = "user_kind", nullable = false)
+    private String userKind = "TENANT";
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -98,6 +101,14 @@ public class AppUser extends TenantEntity {
 
     public void setInvitedBy(UUID invitedBy) {
         this.invitedBy = invitedBy;
+    }
+
+    public String getUserKind() {
+        return userKind;
+    }
+
+    public void setUserKind(String userKind) {
+        this.userKind = userKind;
     }
 
     public Instant getCreatedAt() {

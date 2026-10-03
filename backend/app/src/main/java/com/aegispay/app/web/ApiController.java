@@ -1,6 +1,8 @@
 package com.aegispay.app.web;
 
 import com.aegispay.app.billing.EntitlementService;
+import com.aegispay.app.org.Employment;
+import com.aegispay.app.org.EmploymentRepository;
 import com.aegispay.app.org.Location;
 import com.aegispay.app.org.LocationRepository;
 import com.aegispay.app.org.Person;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -35,6 +38,7 @@ public class ApiController {
 
     private final LocationRepository locations;
     private final PersonRepository people;
+    private final EmploymentRepository employments;
     private final PunchRepository punches;
     private final PunchImportService punchImportService;
     private final PayPeriodRepository periods;
@@ -44,6 +48,7 @@ public class ApiController {
     public ApiController(
             LocationRepository locations,
             PersonRepository people,
+            EmploymentRepository employments,
             PunchRepository punches,
             PunchImportService punchImportService,
             PayPeriodRepository periods,
@@ -52,6 +57,7 @@ public class ApiController {
     ) {
         this.locations = locations;
         this.people = people;
+        this.employments = employments;
         this.punches = punches;
         this.punchImportService = punchImportService;
         this.periods = periods;
@@ -61,7 +67,7 @@ public class ApiController {
 
     @GetMapping("/locations")
     public List<Location> locations() {
-        return locations.findByTenantId(TenantContext.requireTenantId());
+        return locations.findByTenantIdAndDeletedAtIsNull(TenantContext.requireTenantId());
     }
 
     @PostMapping("/locations")
@@ -76,12 +82,15 @@ public class ApiController {
         location.setPostalCode(body.postalCode() == null ? "" : body.postalCode());
         location.setTimeZone(body.timeZone() == null ? "America/Los_Angeles" : body.timeZone());
         location.setJurisdictions(body.jurisdictions() == null ? List.of("US-FLSA") : body.jurisdictions());
+        if (body.openingHours() != null) {
+            location.setOpeningHours(body.openingHours());
+        }
         return locations.save(location);
     }
 
     @GetMapping("/people")
     public List<Person> people() {
-        return people.findByTenantId(TenantContext.requireTenantId());
+        return people.findByTenantIdAndDeletedAtIsNull(TenantContext.requireTenantId());
     }
 
     @PostMapping("/people")
@@ -94,7 +103,16 @@ public class ApiController {
         person.setEmail(body.email());
         person.setHireDate(body.hireDate() == null ? LocalDate.now() : body.hireDate());
         person.setExemptionStatus(body.exemptionStatus() == null ? "NON_EXEMPT" : body.exemptionStatus());
-        return people.save(person);
+        person.setWorkerType(body.workerType() == null ? "EMPLOYEE" : body.workerType());
+        people.save(person);
+        Employment stint = new Employment();
+        stint.setPersonId(person.getId());
+        stint.setWorkerType(person.getWorkerType());
+        stint.setExemptionStatus(person.getExemptionStatus());
+        stint.setHireDate(person.getHireDate());
+        stint.setEffectiveFrom(person.getHireDate());
+        employments.save(stint);
+        return person;
     }
 
     @GetMapping("/punches")
@@ -166,7 +184,8 @@ public class ApiController {
             String region,
             String postalCode,
             String timeZone,
-            List<String> jurisdictions
+            List<String> jurisdictions,
+            Map<String, Object> openingHours
     ) {
     }
 
@@ -175,7 +194,8 @@ public class ApiController {
             String legalName,
             String email,
             LocalDate hireDate,
-            String exemptionStatus
+            String exemptionStatus,
+            String workerType
     ) {
     }
 }

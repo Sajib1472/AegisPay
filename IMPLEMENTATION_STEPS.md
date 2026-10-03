@@ -261,7 +261,7 @@ AegisPay/
 
 ## 4. Step 4 — Domain model (design on paper, then as Flyway)
 
-Draw this on a whiteboard. If a table does not support a payroll run, it does not exist in v1.
+Draw this on a whiteboard, then encode it as Flyway `V9__domain_model.sql` plus JPA in `org`, `time`, `payroll`, and `billing`. If a table does not support a payroll run, it does not exist in v1. `geo_claim` waits until v1.1. Punches are voided with `timesheet_edit`; earnings are voided with a reversing line; only person and location use `deleted_at`.
 
 ### 4.1 Platform (your company)
 

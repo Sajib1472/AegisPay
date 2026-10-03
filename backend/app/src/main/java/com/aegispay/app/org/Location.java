@@ -8,7 +8,10 @@ import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "location")
@@ -42,6 +45,13 @@ public class Location extends TenantEntity {
 
     @Column(name = "wage_order")
     private String wageOrder;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "opening_hours", nullable = false)
+    private Map<String, Object> openingHours = new LinkedHashMap<>();
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 
     public String getName() {
         return name;
@@ -105,5 +115,21 @@ public class Location extends TenantEntity {
 
     public void setWageOrder(String wageOrder) {
         this.wageOrder = wageOrder;
+    }
+
+    public Map<String, Object> getOpeningHours() {
+        return openingHours;
+    }
+
+    public void setOpeningHours(Map<String, Object> openingHours) {
+        this.openingHours = openingHours;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(Instant deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

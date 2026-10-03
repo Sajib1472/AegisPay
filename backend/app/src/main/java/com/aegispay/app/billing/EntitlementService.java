@@ -42,8 +42,8 @@ public class EntitlementService {
         Tenant tenant = tenant();
         PlanCode plan = PlanCode.from(tenant.getPlan());
         PlanCode.PlanLimits limits = plan.limits();
-        long locationCount = locations.countByTenantId(tenant.getId());
-        long employeeCount = people.countByTenantId(tenant.getId());
+        long locationCount = locations.countByTenantIdAndDeletedAtIsNull(tenant.getId());
+        long employeeCount = people.countByTenantIdAndDeletedAtIsNull(tenant.getId());
         long periodCount = periods.countByTenantId(tenant.getId());
         UserRole role = UserRole.valueOf(TenantContext.role() == null ? "VIEWER" : TenantContext.role());
         return new AccountView(

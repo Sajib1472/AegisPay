@@ -61,4 +61,12 @@ public class PayRate extends TenantEntity {
     public void setEffectiveFrom(LocalDate effectiveFrom) {
         this.effectiveFrom = effectiveFrom;
     }
+
+    public LocalDate getEffectiveTo() {
+        return effectiveTo;
+    }
+
+    public void setEffectiveTo(LocalDate effectiveTo) {
+        this.effectiveTo = effectiveTo;
+    }
 }
