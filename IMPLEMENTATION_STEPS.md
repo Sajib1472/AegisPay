@@ -1036,6 +1036,8 @@ If you are slower, cut the PDF and the owner dashboard, not the engine tests.
 
 ## 20. Step 20 — Definition of “ready to sell”
 
+Living checklist: `docs/READY_TO_SELL.md`. Unchecked boxes (staging restore, E&O, a real clinic shadow file) still block taking a card.
+
 You may take a credit card when all of the following are true:
 
 - [ ] Engine reproduces DOL Fact Sheet overtime examples
