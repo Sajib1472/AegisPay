@@ -1,0 +1,11 @@
+{
+  "vertical": "PHYSICAL_THERAPY",
+  "jobCodes": [
+    { "code": "PT", "name": "Physical therapist" },
+    { "code": "PTA", "name": "PT aide" },
+    { "code": "FRONT", "name": "Front desk" }
+  ],
+  "differentials": [
+    { "code": "EVENING", "name": "Evening clinic", "type": "DIFFERENTIAL_PERCENT", "amount": "0.10" }
+  ]
+}

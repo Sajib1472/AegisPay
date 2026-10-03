@@ -35,6 +35,13 @@ public class Tenant {
     @Column(name = "audit_pack_enabled", nullable = false)
     private boolean auditPackEnabled;
 
+    @Column(name = "wizard_step", nullable = false)
+    private String wizardStep = "PROFILE";
+
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Column(name = "clock_mapping", nullable = false)
+    private java.util.Map<String, Object> clockMapping = new java.util.LinkedHashMap<>();
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -110,5 +117,21 @@ public class Tenant {
 
     public void setAuditPackEnabled(boolean auditPackEnabled) {
         this.auditPackEnabled = auditPackEnabled;
+    }
+
+    public String getWizardStep() {
+        return wizardStep;
+    }
+
+    public void setWizardStep(String wizardStep) {
+        this.wizardStep = wizardStep;
+    }
+
+    public java.util.Map<String, Object> getClockMapping() {
+        return clockMapping;
+    }
+
+    public void setClockMapping(java.util.Map<String, Object> clockMapping) {
+        this.clockMapping = clockMapping;
     }
 }

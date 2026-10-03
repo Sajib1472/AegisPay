@@ -7,6 +7,7 @@ import TimePage from "./pages/TimePage";
 import PeoplePage from "./pages/PeoplePage";
 import PayrollPage from "./pages/PayrollPage";
 import SettingsPage from "./pages/SettingsPage";
+import WizardPage from "./pages/WizardPage";
 
 function Shell() {
   const session = getSession();
@@ -31,6 +32,7 @@ function Shell() {
         <NavLink to="/time">Time & imports</NavLink>
         <NavLink to="/people">People & rates</NavLink>
         <NavLink to="/payroll">Payroll runs</NavLink>
+        <NavLink to="/wizard">Setup wizard</NavLink>
         <NavLink to="/settings">Settings</NavLink>
         <div className="spacer" />
         <button
@@ -51,6 +53,7 @@ function Shell() {
           <Route path="/time" element={<TimePage />} />
           <Route path="/people" element={<PeoplePage />} />
           <Route path="/payroll" element={<PayrollPage />} />
+          <Route path="/wizard" element={<WizardPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </main>

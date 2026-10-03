@@ -1,0 +1,12 @@
+{
+  "vertical": "VETERINARY",
+  "jobCodes": [
+    { "code": "DVM", "name": "Veterinarian" },
+    { "code": "RVT", "name": "Registered vet tech" },
+    { "code": "KENNEL", "name": "Kennel tech" },
+    { "code": "FRONT", "name": "Front desk" }
+  ],
+  "differentials": [
+    { "code": "ONCALL", "name": "On-call stipend", "type": "DIFFERENTIAL_FLAT", "amount": "25.00" }
+  ]
+}

@@ -188,5 +188,10 @@ export const api = {
   approve: (runId: string) =>
     request<PayrollView>(`/api/v1/pay-runs/${runId}/approve`, { method: "POST" }),
   account: () => request<AccountView>("/api/v1/account"),
+  wizard: () => request<{ step: string; steps: string[]; legalName: string; vertical: string; locationCount: number; jobCodeCount: number; peopleCount: number; clockMapping: Record<string, string> }>("/api/v1/wizard"),
+  jurisdictions: (city: string, region: string) =>
+    request<{ timeZone: string; jurisdictions: string[]; confirm: string }>(
+      `/api/v1/wizard/jurisdictions?city=${encodeURIComponent(city)}&region=${encodeURIComponent(region)}`
+    ),
   catalog: () => request<{ plans: { code: string; name: string; who: string; monthlyCents: number; maxLocations: number; maxEmployees: number; support: string; auditPackCents: number }[]; noFreeForeverPlan: string; positioning: string[] }>("/api/v1/catalog")
 };

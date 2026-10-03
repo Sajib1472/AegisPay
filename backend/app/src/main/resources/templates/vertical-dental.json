@@ -1,0 +1,12 @@
+{
+  "vertical": "DENTAL",
+  "jobCodes": [
+    { "code": "RDH", "name": "Registered Dental Hygienist" },
+    { "code": "RDA", "name": "Registered Dental Assistant" },
+    { "code": "FRONT", "name": "Front office" },
+    { "code": "ASSIST", "name": "Assistant" }
+  ],
+  "differentials": [
+    { "code": "WEEKEND", "name": "Saturday clinic", "type": "DIFFERENTIAL_FLAT", "amount": "4.00" }
+  ]
+}

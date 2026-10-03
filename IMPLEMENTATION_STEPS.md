@@ -422,7 +422,7 @@ Record who invited whom. Clinics have turnover; you will be asked “who added t
 
 ## 7. Step 7 — Organization setup wizard (the onboarding that makes it sellable)
 
-A tool that needs a consultant to configure will not be a micro-SaaS. The wizard is a product feature.
+A tool that needs a consultant to configure will not be a micro-SaaS. The wizard is a product feature (`/api/v1/wizard`, `JurisdictionResolver`, vertical JSON templates).
 
 ### 7.1 Wizard screens, in order
 

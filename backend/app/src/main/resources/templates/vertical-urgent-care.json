@@ -1,0 +1,11 @@
+{
+  "vertical": "URGENT_CARE",
+  "jobCodes": [
+    { "code": "RN", "name": "Registered nurse" },
+    { "code": "MA", "name": "Medical assistant" },
+    { "code": "FRONT", "name": "Front desk" }
+  ],
+  "differentials": [
+    { "code": "NIGHT", "name": "Overnight shift", "type": "DIFFERENTIAL_FLAT", "amount": "6.00" }
+  ]
+}
