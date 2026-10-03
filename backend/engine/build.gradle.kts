@@ -1,5 +1,10 @@
 plugins {
     java
+    application
+}
+
+application {
+    mainClass.set("com.aegispay.engine.concierge.ConciergeMain")
 }
 
 dependencies {

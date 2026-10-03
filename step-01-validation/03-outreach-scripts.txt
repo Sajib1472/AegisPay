@@ -1,0 +1,52 @@
+AegisPay — outreach scripts (Step 1.2)
+Do not pitch features. Ask for a de-identified punch export.
+
+------------------------------------------------
+Sources, in this order
+------------------------------------------------
+1. Local dental study clubs, state dental association classifieds, DSO office-manager groups
+2. Multi-location PT / outpatient rehab groups (often 4–8 sites, production pay)
+3. Veterinary groups that just rolled up 2–6 hospitals
+4. CPAs and bookkeepers who already run payroll for 10+ clinics (best channel)
+
+Target: 30 named people in 02-buyer-pipeline.csv. Status values:
+  prospect | messaged | call_booked | discovery_done | export_received | autopsy_sent | paid_150 | closed_no
+
+------------------------------------------------
+Cold DM / email (office manager)
+------------------------------------------------
+Subject: The Excel day before payroll
+
+Office managers at multi-location clinics tell me they spend a day before each payroll
+fixing overtime, missed lunches, and hygienist bonuses in Excel so Gusto doesn’t underpay people.
+
+I’m building the checker that does that automatically and produces an audit file.
+
+If I ran your last two pay periods for free, would you send me a de-identified punch export?
+(Employee codes instead of names is enough. No SSNs, no bank accounts, no patient data.)
+
+------------------------------------------------
+Follow-up (5 days later)
+------------------------------------------------
+Quick bump — happy to do this as a 20-minute payroll autopsy, not a software demo.
+You keep Gusto. I only show where the hours were wrong.
+
+------------------------------------------------
+CPA / bookkeeper version
+------------------------------------------------
+Subject: Clinic payroll you already touch
+
+If you have clinic clients whose office managers still rebuild overtime in Excel the day
+before payday, I’ll audit two pay periods for free and send you a cited exception list
+you can hand the owner.
+
+If it finds money, we split nothing — you look like the hero; I ask the owner for a $299/month tool.
+If you prefer to resell it later, we can talk channel pricing after three intros.
+
+------------------------------------------------
+What to refuse in the first message
+------------------------------------------------
+- “We’ll do full payroll and tax filing”
+- “HIPAA certified”
+- “All 50 states”
+- Discounting below $299 before you have 10 customers

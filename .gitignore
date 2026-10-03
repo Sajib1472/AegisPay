@@ -24,3 +24,6 @@ frontend/.vite/
 # Uploads / generated
 data/
 *.csv.bak
+step-01-validation/out/
+step-01-validation/calls/*
+!step-01-validation/calls/_template.md

@@ -1,0 +1,4 @@
+employee_code,label,hourly_rate,exemption,jurisdictions,timezone,job_code
+1001,Hygienist A,42.00,NON_EXEMPT,US-FLSA|US-CA,America/Los_Angeles,RDH
+1002,Assistant B,28.00,NON_EXEMPT,US-FLSA|US-CA,America/Los_Angeles,RDA
+1003,Front desk C,22.00,NON_EXEMPT,US-FLSA,America/Chicago,FRONT

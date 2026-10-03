@@ -56,7 +56,9 @@ Do not add an EHR, patient scheduling, insurance billing, full HRIS, applicant t
 
 ## 1. Step 1 — Validate the idea with money, not opinions
 
-Do this before Spring Initializr. If you cannot get a clinic manager to describe their Excel ritual, the product is a hobby.
+Do this before treating the app as sellable. If you cannot get a clinic manager to describe their Excel ritual, the product is a hobby.
+
+Working files live in `step-01-validation/`. The concierge CLI is `com.aegispay.engine.concierge.ConciergeMain` (engine module). Sample CSVs are in `step-01-validation/samples/`. Fill `02-buyer-pipeline.csv` and `05-go-no-go.md` before Step 2.
 
 ### 1.1 Write a one-page offer
 
