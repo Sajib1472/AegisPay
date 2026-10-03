@@ -25,6 +25,7 @@ public class PunchAdjustmentService {
 
     @Transactional
     public Punch adjust(UUID punchId, Instant adjustedAt, String reasonCode, String note) {
+        PunchReasonCode.valueOf(reasonCode == null || reasonCode.isBlank() ? "OTHER" : reasonCode);
         Punch punch = punches.findById(punchId).orElseThrow();
         if (punch.getVoidedAt() != null) {
             throw new IllegalStateException("Voided punches cannot be adjusted");

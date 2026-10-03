@@ -461,7 +461,7 @@ The vertical is a sales feature. “Built for dental groups” closes deals. The
 
 ### 8.1 CSV importer first, APIs second
 
-Office managers live in CSV. Build:
+Office managers live in CSV. Build preview (`/api/v1/punches/preview`), validate, commit, and require a reason code on every edit (`PunchReasonCode`). Pairing edge cases live in `PunchPairerTest`.
 
 1. Upload
 2. Preview first 20 rows with mapped columns

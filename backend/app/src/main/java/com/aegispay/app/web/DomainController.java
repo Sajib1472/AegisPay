@@ -5,10 +5,9 @@ import com.aegispay.app.org.OrgSoftDeleteService;
 import com.aegispay.app.org.Person;
 import com.aegispay.app.payroll.EarningsLedger;
 import com.aegispay.app.payroll.EarningsLineEntity;
-import com.aegispay.app.platform.tenancy.TenantContext;
 import com.aegispay.app.time.Punch;
+import com.aegispay.app.time.PunchAccessService;
 import com.aegispay.app.time.PunchAdjustmentService;
-import com.aegispay.app.time.PunchRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,25 +26,24 @@ public class DomainController {
 
     private final OrgSoftDeleteService softDelete;
     private final PunchAdjustmentService punchAdjustments;
-    private final PunchRepository punches;
+    private final PunchAccessService punchAccess;
     private final EarningsLedger earnings;
 
     public DomainController(
             OrgSoftDeleteService softDelete,
             PunchAdjustmentService punchAdjustments,
-            PunchRepository punches,
+            PunchAccessService punchAccess,
             EarningsLedger earnings
     ) {
         this.softDelete = softDelete;
         this.punchAdjustments = punchAdjustments;
-        this.punches = punches;
+        this.punchAccess = punchAccess;
         this.earnings = earnings;
     }
 
     @GetMapping("/punches/{id}")
     public Punch punch(@PathVariable UUID id) {
-        return punches.findByTenantIdAndId(TenantContext.requireTenantId(), id)
-                .orElseThrow(() -> new NotFoundException("Punch not found"));
+        return punchAccess.require(id);
     }
 
     @DeleteMapping("/locations/{id}")
