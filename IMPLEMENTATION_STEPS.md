@@ -1078,6 +1078,8 @@ Do not start #1 until the engine has survived three live payrolls.
 
 ## 22. Risks that kill this business if you ignore them
 
+Register: `docs/RISKS.md`. CA math, tax-filing creep, PHI, engine forks, 50-state vanity, and silence in the market.
+
 1. **Wrong CA math** — one public error and dental Facebook groups will bury you. Tests and counsel first.
 2. **Becoming a full payroll company** too early — tax filing will consume a year.
 3. **PHI creep** — one “can you just pull hours from our EHR” later you are in HIPAA land.
