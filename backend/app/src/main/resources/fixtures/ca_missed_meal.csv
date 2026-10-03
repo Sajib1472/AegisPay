@@ -1,0 +1,7 @@
+employee_code,timestamp,type,location
+1001,2024-06-03 08:00,IN,downtown
+1001,2024-06-03 12:00,BREAK_START,downtown
+1001,2024-06-03 12:30,BREAK_END,downtown
+1001,2024-06-03 17:15,OUT,downtown
+1002,2024-06-03 08:00,IN,downtown
+1002,2024-06-03 16:00,OUT,downtown

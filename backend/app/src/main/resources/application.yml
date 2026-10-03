@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: aegispay
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/aegispay}
+    username: ${POSTGRES_USER:aegispay}
+    password: ${POSTGRES_PASSWORD:aegispay}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+  profiles:
+    default: local
+
+server:
+  port: 8080
+  error:
+    include-message: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: AegisPay
+    engine: 0.1.0
+
+aegispay:
+  jwt:
+    secret: ${JWT_SECRET:change-me-to-a-64-character-secret-before-any-real-tenant-xx}
+    issuer: ${JWT_ISSUER:https://aegispay.local}
+    access-minutes: 15
+    refresh-days: 7
+  cors:
+    origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+  seed: ${AEGISPAY_SEED:false}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  jpa:
+    show-sql: false
+
+aegispay:
+  seed: true
