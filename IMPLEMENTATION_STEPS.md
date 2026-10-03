@@ -1059,6 +1059,8 @@ If any box is unchecked, you can demo, you cannot honestly sell.
 
 ## 21. What to build after it sells (only when a customer pays for it)
 
+Backlog: `docs/AFTER_IT_SELLS.md`. Do not start employee mobile punch until three live payrolls.
+
 Priority order once you have 5+ paying groups:
 
 1. Employee mobile punch + geofence + attestation (so you can unplug Homebase later)
