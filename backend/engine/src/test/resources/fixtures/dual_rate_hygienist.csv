@@ -1,0 +1,5 @@
+employee_code,timestamp,type,location,job_code
+1002,2024-06-03 08:00,IN,downtown,RDH
+1002,2024-06-03 12:00,OUT,downtown,RDH
+1002,2024-06-03 13:00,IN,downtown,FRONT
+1002,2024-06-03 17:00,OUT,downtown,FRONT

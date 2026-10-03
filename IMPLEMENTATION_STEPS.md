@@ -848,6 +848,8 @@ Before you have 10 paying tenants, pay for a lightweight pentest or at least run
 
 ## 16. Step 16 — Testing strategy (the engine is guilty until proven innocent)
 
+Forever fixtures: `ca_missed_meal.csv`, `ca_nine_hour_day.csv`, `flsa_bonus_trueup.csv`, `dual_rate_hygienist.csv`, `cross_midnight_urgent_care.csv`. Playwright happy path: `frontend/e2e/payroll-happy-path.spec.ts`. Stripe signature rejection: `StripeSignatureTest`.
+
 ### 16.1 Unit tests (`engine`)
 
 - One test class per rule

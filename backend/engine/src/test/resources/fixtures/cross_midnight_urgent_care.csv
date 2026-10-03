@@ -1,0 +1,3 @@
+employee_code,timestamp,type,location
+2001,2024-06-03 19:00,IN,urgent-care
+2001,2024-06-04 07:00,OUT,urgent-care
