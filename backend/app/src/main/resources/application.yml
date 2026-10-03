@@ -15,6 +15,10 @@ spring:
           time_zone: UTC
   flyway:
     enabled: true
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
   profiles:
     default: local
   jackson:
@@ -35,6 +39,9 @@ springdoc:
 
 server:
   port: ${PORT:8080}
+  tomcat:
+    max-http-form-post-size: 2MB
+    max-swallow-size: 2MB
   error:
     include-message: always
     include-stacktrace: never

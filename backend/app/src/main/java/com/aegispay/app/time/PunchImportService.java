@@ -47,6 +47,10 @@ public class PunchImportService {
 
     @Transactional
     public ImportResult importCsv(String fileName, String csv, UUID locationId, ZoneId zone) {
+        com.aegispay.app.platform.security.ForbiddenHrColumnGuard.assertSafeCsv(csv);
+        if (csv != null && csv.length() > 2_000_000) {
+            throw new IllegalArgumentException("CSV is larger than 2 MB");
+        }
         String sha = sha256(csv);
         UUID tenantId = TenantContext.requireTenantId();
         Optional<PunchImportBatch> existing = batches.findByTenantIdAndFileSha256(tenantId, sha);

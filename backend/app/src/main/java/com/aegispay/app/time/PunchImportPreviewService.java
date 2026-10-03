@@ -32,6 +32,7 @@ public class PunchImportPreviewService {
     }
 
     public Preview preview(String csv, String format, Map<String, Integer> mapping, ZoneId zone) {
+        com.aegispay.app.platform.security.ForbiddenHrColumnGuard.assertSafeCsv(csv);
         String normalized = ClockCsvFormats.normalize(format, csv, mapping);
         String[] lines = normalized.split("\\R");
         List<Map<String, String>> rows = new ArrayList<>();

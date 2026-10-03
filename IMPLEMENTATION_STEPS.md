@@ -811,6 +811,8 @@ You sell software subscriptions. Collect sales tax via Stripe Tax when you have 
 
 ## 15. Step 15 — Security, privacy, and “we won’t get you sued”
 
+Controls live in `docs/SECURITY.md`: SSN/bank CSV reject, login/import rate limits, security headers, 2 MB upload cap. No PHI. No JWTs in logs.
+
 ### 15.1 Data you store
 
 Staff names, emails, wages, hours, locations. Sensitive. Treat it like HR data.
