@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.Filter;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -37,6 +38,19 @@ public class PayRunExceptionEntity extends TenantEntity {
 
     @Column(nullable = false)
     private boolean dismissed;
+
+    @Column(name = "dismiss_reason")
+    private String dismissReason;
+
+    @Column(name = "dismissed_by")
+    private UUID dismissedBy;
+
+    @Column(name = "dismissed_at")
+    private Instant dismissedAt;
+
+    public UUID getPayRunId() {
+        return payRunId;
+    }
 
     public void setPayRunId(UUID payRunId) {
         this.payRunId = payRunId;
@@ -88,5 +102,37 @@ public class PayRunExceptionEntity extends TenantEntity {
 
     public LocalDate getWorkDate() {
         return workDate;
+    }
+
+    public boolean isDismissed() {
+        return dismissed;
+    }
+
+    public void setDismissed(boolean dismissed) {
+        this.dismissed = dismissed;
+    }
+
+    public String getDismissReason() {
+        return dismissReason;
+    }
+
+    public void setDismissReason(String dismissReason) {
+        this.dismissReason = dismissReason;
+    }
+
+    public UUID getDismissedBy() {
+        return dismissedBy;
+    }
+
+    public void setDismissedBy(UUID dismissedBy) {
+        this.dismissedBy = dismissedBy;
+    }
+
+    public Instant getDismissedAt() {
+        return dismissedAt;
+    }
+
+    public void setDismissedAt(Instant dismissedAt) {
+        this.dismissedAt = dismissedAt;
     }
 }

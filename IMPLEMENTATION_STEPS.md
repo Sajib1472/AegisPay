@@ -630,6 +630,8 @@ In addition to golden DOL examples:
 
 ## 10. Step 10 — Pay period, run, lock, export
 
+Lifecycle `DRAFT` → `CALCULATED` → `EXCEPTIONS_PENDING` → `APPROVED` → `EXPORTED` → `LOCKED` (`PayRunLifecycle`). Dual-control unlock is PAYROLL_ADMIN request + OWNER confirm. Gusto fixture: `engine/src/test/resources/fixtures/gusto-import.csv`.
+
 ### 10.1 Pay period lifecycle
 
 `DRAFT` → `CALCULATED` → `EXCEPTIONS_PENDING` → `APPROVED` → `EXPORTED` → `LOCKED`

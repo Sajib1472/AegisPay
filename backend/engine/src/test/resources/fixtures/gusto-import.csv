@@ -1,0 +1,5 @@
+employee_code,earning_type,hours,amount,note
+HD-001,Regular Hours,8.0000,240.00,Straight time
+HD-001,Overtime,2.0000,90.00,Weekly overtime
+HD-001,Meal break premium,1.0000,30.00,Missed meal premium
+HD-001,Bonus,0.0000,50.00,Production bonus

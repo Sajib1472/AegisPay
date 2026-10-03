@@ -45,6 +45,21 @@ public class PayRun extends TenantEntity {
     @Column(name = "snapshot_sha256")
     private String snapshotSha256;
 
+    @Column(name = "approval_ip")
+    private String approvalIp;
+
+    @Column(name = "unlocked_by")
+    private UUID unlockedBy;
+
+    @Column(name = "unlocked_at")
+    private Instant unlockedAt;
+
+    @Column(name = "exported_at")
+    private Instant exportedAt;
+
+    @Column(name = "lock_at")
+    private Instant lockAt;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -118,5 +133,45 @@ public class PayRun extends TenantEntity {
 
     public void setSnapshotSha256(String snapshotSha256) {
         this.snapshotSha256 = snapshotSha256;
+    }
+
+    public String getApprovalIp() {
+        return approvalIp;
+    }
+
+    public void setApprovalIp(String approvalIp) {
+        this.approvalIp = approvalIp;
+    }
+
+    public UUID getUnlockedBy() {
+        return unlockedBy;
+    }
+
+    public void setUnlockedBy(UUID unlockedBy) {
+        this.unlockedBy = unlockedBy;
+    }
+
+    public Instant getUnlockedAt() {
+        return unlockedAt;
+    }
+
+    public void setUnlockedAt(Instant unlockedAt) {
+        this.unlockedAt = unlockedAt;
+    }
+
+    public Instant getExportedAt() {
+        return exportedAt;
+    }
+
+    public void setExportedAt(Instant exportedAt) {
+        this.exportedAt = exportedAt;
+    }
+
+    public Instant getLockAt() {
+        return lockAt;
+    }
+
+    public void setLockAt(Instant lockAt) {
+        this.lockAt = lockAt;
     }
 }

@@ -7,4 +7,6 @@ import java.util.UUID;
 
 public interface BonusEntryRepository extends JpaRepository<BonusEntry, UUID> {
     List<BonusEntry> findByTenantIdAndPersonId(UUID tenantId, UUID personId);
+
+    List<BonusEntry> findByTenantId(UUID tenantId);
 }

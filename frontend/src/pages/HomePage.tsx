@@ -21,7 +21,9 @@ export default function HomePage() {
       .catch((err) => setError(err.message));
   }, []);
 
-  const openPeriod = periods.find((p) => p.status === "OPEN");
+  const openPeriod = periods.find((p) =>
+    ["DRAFT", "CALCULATED", "EXCEPTIONS_PENDING", "OPEN"].includes(p.status)
+  );
 
   return (
     <div>

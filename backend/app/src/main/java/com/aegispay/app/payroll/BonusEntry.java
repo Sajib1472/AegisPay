@@ -27,6 +27,9 @@ public class BonusEntry extends TenantEntity {
     @Column(nullable = false)
     private boolean discretionary;
 
+    @Column(name = "pay_period_id")
+    private UUID payPeriodId;
+
     private String note;
 
     public UUID getPersonId() {
@@ -59,6 +62,14 @@ public class BonusEntry extends TenantEntity {
 
     public void setDiscretionary(boolean discretionary) {
         this.discretionary = discretionary;
+    }
+
+    public UUID getPayPeriodId() {
+        return payPeriodId;
+    }
+
+    public void setPayPeriodId(UUID payPeriodId) {
+        this.payPeriodId = payPeriodId;
     }
 
     public String getNote() {

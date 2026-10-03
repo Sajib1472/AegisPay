@@ -54,6 +54,8 @@ export type PayrollView = {
   engineVersion: string;
   approvedBy?: string | null;
   approvedAt?: string | null;
+  approvalIp?: string | null;
+  unlockPending?: boolean;
   regularRates: Record<string, string>;
   lines: {
     personId: string;
@@ -65,14 +67,33 @@ export type PayrollView = {
     explanation: Record<string, string>;
   }[];
   exceptions: {
+    id: string;
     personId: string;
     workDate: string;
     type: string;
     severity: string;
     blocker: boolean;
     message: string;
+    dismissed: boolean;
+    dismissReason?: string | null;
+  }[];
+  register: {
+    personId: string;
+    legalName: string;
+    employeeCode: string;
+    regularHours: number;
+    regularPay: number;
+    otHours: number;
+    otPay: number;
+    dtHours: number;
+    dtPay: number;
+    premiums: number;
+    differentials: number;
+    bonus: number;
+    grossEarningsSubmitted: number;
   }[];
   gustoCsv: string;
+  genericCsv?: string;
   snapshotSha256?: string;
   success: {
     punchesAccounted: boolean;
@@ -83,6 +104,16 @@ export type PayrollView = {
     gustoExportReady: boolean;
     pairingProblemsFlagged: boolean;
   };
+};
+
+export type BonusEntry = {
+  id: string;
+  personId: string;
+  amount: number;
+  earnedOn: string;
+  discretionary: boolean;
+  note?: string | null;
+  payPeriodId?: string | null;
 };
 
 export type AccountView = {
@@ -185,8 +216,40 @@ export const api = {
     }),
   calculate: (periodId: string) =>
     request<PayrollView>(`/api/v1/pay-periods/${periodId}/runs`, { method: "POST" }),
-  approve: (runId: string) =>
-    request<PayrollView>(`/api/v1/pay-runs/${runId}/approve`, { method: "POST" }),
+  latestRun: (periodId: string) =>
+    request<PayrollView | null>(`/api/v1/pay-periods/${periodId}/runs/latest`),
+  approve: (runId: string, confirmed: boolean) =>
+    request<PayrollView>(`/api/v1/pay-runs/${runId}/approve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmed })
+    }),
+  exportRun: (runId: string) =>
+    request<PayrollView>(`/api/v1/pay-runs/${runId}/export`, { method: "POST" }),
+  requestUnlock: (runId: string) =>
+    request(`/api/v1/pay-runs/${runId}/unlock-request`, { method: "POST" }),
+  confirmUnlock: (runId: string) =>
+    request<PayrollView>(`/api/v1/pay-runs/${runId}/unlock`, { method: "POST" }),
+  dismissException: (runId: string, exceptionId: string, reason: string) =>
+    request<PayrollView>(`/api/v1/pay-runs/${runId}/exceptions/${exceptionId}/dismiss`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason })
+    }),
+  bonuses: () => request<BonusEntry[]>("/api/v1/bonuses"),
+  createBonus: (body: {
+    personId: string;
+    amount: string;
+    earnedOn: string;
+    discretionary: boolean;
+    note: string;
+    payPeriodId?: string;
+  }) =>
+    request<BonusEntry>("/api/v1/bonuses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }),
   account: () => request<AccountView>("/api/v1/account"),
   wizard: () => request<{ step: string; steps: string[]; legalName: string; vertical: string; locationCount: number; jobCodeCount: number; peopleCount: number; clockMapping: Record<string, string> }>("/api/v1/wizard"),
   jurisdictions: (city: string, region: string) =>

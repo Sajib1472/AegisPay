@@ -7,4 +7,6 @@ import java.util.UUID;
 
 public interface PayRunRepository extends JpaRepository<PayRun, UUID> {
     List<PayRun> findByTenantIdAndPayPeriodId(UUID tenantId, UUID payPeriodId);
+
+    List<PayRun> findByTenantIdAndPayPeriodIdOrderByCreatedAtDesc(UUID tenantId, UUID payPeriodId);
 }

@@ -79,7 +79,7 @@ public final class GustoCsvExporter {
 
     public String generic(String employeeCode, EarningsResult result) {
         List<String> rows = new ArrayList<>();
-        rows.add("employee_code,earning_type,hours,amount,date,note");
+        rows.add("employee_code,earning_type,hours,amount,date,location,note");
         for (EarningsLine line : result.lines()) {
             rows.add(String.join(",",
                     csv(employeeCode),
@@ -87,6 +87,7 @@ public final class GustoCsvExporter {
                     csv(line.hours().toString()),
                     csv(line.amount().toStatement().toPlainString()),
                     csv(line.workDate() == null ? "" : line.workDate().toString()),
+                    csv(""),
                     csv(line.explanation().code())
             ));
         }

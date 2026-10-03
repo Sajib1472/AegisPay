@@ -272,7 +272,7 @@ public class HarborDentalSeed implements CommandLineRunner {
         period.setPeriodType("BIWEEKLY");
         period.setStartDate(week);
         period.setEndDate(week.plusDays(13));
-        period.setStatus("OPEN");
+        period.setStatus("DRAFT");
         periods.save(period);
 
         TenantContext.clear();

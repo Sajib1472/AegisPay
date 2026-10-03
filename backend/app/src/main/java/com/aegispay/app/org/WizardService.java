@@ -118,7 +118,7 @@ public class WizardService {
         period.setPeriodType(type == null ? "BIWEEKLY" : type);
         period.setStartDate(start);
         period.setEndDate(end);
-        period.setStatus("OPEN");
+        period.setStatus("DRAFT");
         PayPeriod saved = periods.save(period);
         TenantPolicyEntity policy = policies.findById(TenantContext.requireTenantId()).orElseGet(TenantPolicyEntity::new);
         policy.setTenantId(TenantContext.requireTenantId());

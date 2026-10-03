@@ -36,6 +36,9 @@ public class TenantPolicyEntity {
     @Column(name = "export_destination", nullable = false)
     private String exportDestination = "GUSTO";
 
+    @Column(name = "lock_on_export", nullable = false)
+    private boolean lockOnExport;
+
     public UUID getTenantId() {
         return tenantId;
     }
@@ -78,5 +81,13 @@ public class TenantPolicyEntity {
 
     public String getExportDestination() {
         return exportDestination;
+    }
+
+    public boolean isLockOnExport() {
+        return lockOnExport;
+    }
+
+    public void setLockOnExport(boolean lockOnExport) {
+        this.lockOnExport = lockOnExport;
     }
 }

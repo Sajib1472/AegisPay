@@ -15,6 +15,7 @@ import com.aegispay.app.org.TenantPolicyEntity;
 import com.aegispay.app.org.TenantPolicyRepository;
 import com.aegispay.app.platform.audit.AuditRecorder;
 import com.aegispay.app.platform.identity.AuthService;
+import com.aegispay.app.platform.identity.UserRole;
 import com.aegispay.app.platform.tenancy.TenantContext;
 import com.aegispay.app.rules.RulePackResolver;
 import com.aegispay.app.time.MealAttestation;
@@ -29,8 +30,10 @@ import com.aegispay.engine.model.WorkPeriod;
 import com.aegispay.engine.model.WorkPeriod.Attestation;
 import com.aegispay.engine.model.WorkPeriod.Attestation.MealAnswer;
 import com.aegispay.engine.model.WorkPeriod.ExemptionStatus;
+import com.aegispay.engine.money.Hours;
 import com.aegispay.engine.money.Money;
 import com.aegispay.engine.result.EarningsResult;
+import com.aegispay.engine.result.EarningsResult.EarningBucket;
 import com.aegispay.engine.rules.RulePack;
 import com.aegispay.engine.time.PunchPairer;
 import com.aegispay.engine.time.PunchPairer.PunchKind;
@@ -38,18 +41,22 @@ import com.aegispay.engine.time.PunchPairer.RawPunch;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -76,6 +83,7 @@ public class PayrollRunService {
     private final BonusEntryRepository bonuses;
     private final TenantPolicyRepository policies;
     private final PayRunSnapshotRepository snapshots;
+    private final PayRunUnlockRequestRepository unlockRequests;
     private final EntitlementService entitlements;
     private final RulePackResolver rulePacks;
     private final AuditRecorder audit;
@@ -97,6 +105,7 @@ public class PayrollRunService {
             BonusEntryRepository bonuses,
             TenantPolicyRepository policies,
             PayRunSnapshotRepository snapshots,
+            PayRunUnlockRequestRepository unlockRequests,
             EntitlementService entitlements,
             RulePackResolver rulePacks,
             AuditRecorder audit,
@@ -117,6 +126,7 @@ public class PayrollRunService {
         this.bonuses = bonuses;
         this.policies = policies;
         this.snapshots = snapshots;
+        this.unlockRequests = unlockRequests;
         this.entitlements = entitlements;
         this.rulePacks = rulePacks;
         this.audit = audit;
@@ -135,11 +145,17 @@ public class PayrollRunService {
         UUID tenantId = TenantContext.requireTenantId();
         PayPeriod period = periods.findById(periodId).orElseThrow();
         TenantPolicyEntity policy = policies.findById(tenantId).orElseGet(TenantPolicyEntity::new);
+        applyLockIfDue(latestRun(tenantId, periodId).orElse(null), policy);
+        latestRun(tenantId, periodId).ifPresent(existing -> {
+            if (!PayRunLifecycle.recalculateAllowed(existing.getStatus())) {
+                throw new IllegalStateException("Recalculate is not allowed after APPROVED. Dual-control unlock is required.");
+            }
+        });
         RulePackResolver.Resolved resolved = rulePacks.resolve(period.getEndDate(), lawMode);
 
         PayRun run = new PayRun();
         run.setPayPeriodId(period.getId());
-        run.setStatus("CALCULATED");
+        run.setStatus(PayRunLifecycle.DRAFT);
         run.setEngineVersion(EngineVersion.VALUE);
         run.setRulePackVersions(resolved.labels());
         run.setRulePackIds(resolved.ids());
@@ -151,6 +167,7 @@ public class PayrollRunService {
         List<RulePack> packs = resolved.engine();
         EngineOptions options = EngineOptions.fromPacks(packs);
         GustoCsvExporter.Holder csvParts = new GustoCsvExporter.Holder();
+        GustoCsvExporter.Holder genericParts = new GustoCsvExporter.Holder();
         Map<String, String> regularRates = new LinkedHashMap<>();
         Map<String, String> grossByPerson = new LinkedHashMap<>();
 
@@ -264,57 +281,196 @@ public class PayrollRunService {
 
             EarningsResult result = engine.calculate(workPeriod, packs, options);
             persistResult(run, person, result);
+            addWarnings(run, period, person, result, bonusList.isEmpty());
             csvParts.append(exporter.export(person.getExternalEmployeeCode(), result));
+            genericParts.append(exporter.generic(person.getExternalEmployeeCode(), result));
             regularRates.put(person.getId().toString(), result.regularRate().toString());
             grossByPerson.put(person.getId().toString(), result.totals().gross().toString());
         }
 
         String csv = csvParts.merge();
-        ExportFile file = new ExportFile();
-        file.setPayRunId(run.getId());
-        file.setDestination("GUSTO");
-        file.setContent(csv);
-        file.setChecksumSha256(sha(csv));
-        exports.save(file);
+        saveExport(run.getId(), "GUSTO", csv);
+        saveExport(run.getId(), "GENERIC", genericParts.merge());
 
         boolean blockers = exceptions.findByTenantIdAndPayRunId(tenantId, run.getId()).stream()
-                .anyMatch(PayRunExceptionEntity::isBlocker);
-        run.setStatus(blockers ? "EXCEPTIONS_PENDING" : "CALCULATED");
+                .anyMatch(e -> e.isBlocker() && !e.isDismissed());
+        String next = PayRunLifecycle.afterCalculate(blockers);
+        run.setStatus(next);
+        period.setStatus(next);
         persistSnapshot(run, regularRates, grossByPerson);
         return run;
     }
 
     @Transactional
-    public PayRun approve(UUID runId) {
+    public PayRun approve(UUID runId, boolean confirmed, String ip) {
         entitlements.assertCanApprove();
+        auth.assertCanRunPayroll(auth.requireUser());
+        if (!confirmed) {
+            throw new IllegalStateException("Confirm that exceptions were reviewed before approving");
+        }
+        UUID tenantId = TenantContext.requireTenantId();
         PayRun run = runs.findById(runId).orElseThrow();
-        boolean blockers = exceptions.findByTenantIdAndPayRunId(TenantContext.requireTenantId(), runId).stream()
-                .anyMatch(e -> e.isBlocker());
+        applyLockIfDue(run, policies.findById(tenantId).orElseGet(TenantPolicyEntity::new));
+        if (PayRunLifecycle.LOCKED.equals(run.getStatus())) {
+            throw new IllegalStateException("Locked runs cannot be approved");
+        }
+        boolean blockers = exceptions.findByTenantIdAndPayRunId(tenantId, runId).stream()
+                .anyMatch(e -> e.isBlocker() && !e.isDismissed());
         if (blockers) {
             throw new IllegalStateException("Cannot approve a run with blocker exceptions");
         }
-        run.setStatus("APPROVED");
+        run.setStatus(PayRunLifecycle.APPROVED);
         run.setApprovedBy(TenantContext.userId());
         run.setApprovedAt(Instant.now());
+        run.setApprovalIp(ip);
+        periods.findById(run.getPayPeriodId()).ifPresent(period -> period.setStatus(PayRunLifecycle.APPROVED));
         audit.record("PAYROLL_APPROVE", "pay_run", runId.toString());
         return run;
     }
 
+    @Transactional
+    public PayRun exportRun(UUID runId) {
+        entitlements.assertWritable();
+        auth.assertCanRunPayroll(auth.requireUser());
+        UUID tenantId = TenantContext.requireTenantId();
+        PayRun run = runs.findById(runId).orElseThrow();
+        if (!PayRunLifecycle.APPROVED.equals(run.getStatus()) && !PayRunLifecycle.EXPORTED.equals(run.getStatus())) {
+            throw new IllegalStateException("Approve the run before exporting");
+        }
+        TenantPolicyEntity policy = policies.findById(tenantId).orElseGet(TenantPolicyEntity::new);
+        Instant now = Instant.now();
+        run.setExportedAt(now);
+        run.setLockAt(PayRunLifecycle.lockAt(now, policy.isLockOnExport()));
+        run.setStatus(PayRunLifecycle.EXPORTED);
+        periods.findById(run.getPayPeriodId()).ifPresent(period -> period.setStatus(PayRunLifecycle.EXPORTED));
+        applyLockIfDue(run, policy);
+        audit.record("PAYROLL_EXPORT", "pay_run", runId.toString());
+        return run;
+    }
+
+    @Transactional
+    public PayRunUnlockRequest requestUnlock(UUID runId) {
+        entitlements.assertWritable();
+        if (!UserRole.PAYROLL_ADMIN.name().equals(TenantContext.role())) {
+            throw new IllegalStateException("PAYROLL_ADMIN must request the unlock; OWNER confirms");
+        }
+        PayRun run = runs.findById(runId).orElseThrow();
+        if (!PayRunLifecycle.isTerminal(run.getStatus())) {
+            throw new IllegalStateException("Unlock is only for APPROVED, EXPORTED, or LOCKED runs");
+        }
+        PayRunUnlockRequest request = new PayRunUnlockRequest();
+        request.setPayRunId(runId);
+        request.setRequestedBy(TenantContext.userId());
+        request.setStatus("PENDING");
+        unlockRequests.save(request);
+        audit.record("PAYROLL_UNLOCK_REQUEST", "pay_run", runId.toString());
+        return request;
+    }
+
+    @Transactional
+    public PayRun confirmUnlock(UUID runId) {
+        entitlements.assertWritable();
+        if (!UserRole.OWNER.name().equals(TenantContext.role())) {
+            throw new IllegalStateException("OWNER must confirm the unlock");
+        }
+        UUID tenantId = TenantContext.requireTenantId();
+        PayRun run = runs.findById(runId).orElseThrow();
+        PayRunUnlockRequest request = unlockRequests
+                .findFirstByTenantIdAndPayRunIdAndStatusOrderByRequestedAtDesc(tenantId, runId, "PENDING")
+                .orElseThrow(() -> new IllegalStateException("PAYROLL_ADMIN has not requested an unlock"));
+        if (request.getRequestedBy().equals(TenantContext.userId())) {
+            throw new IllegalStateException("Dual control requires a second person");
+        }
+        request.setConfirmedBy(TenantContext.userId());
+        request.setConfirmedAt(Instant.now());
+        request.setStatus("CONFIRMED");
+        run.setStatus(PayRunLifecycle.CALCULATED);
+        run.setUnlockedBy(TenantContext.userId());
+        run.setUnlockedAt(Instant.now());
+        run.setApprovedBy(null);
+        run.setApprovedAt(null);
+        run.setApprovalIp(null);
+        run.setExportedAt(null);
+        run.setLockAt(null);
+        periods.findById(run.getPayPeriodId()).ifPresent(period -> period.setStatus(PayRunLifecycle.CALCULATED));
+        audit.record("PAYROLL_UNLOCK", "pay_run", runId.toString());
+        audit.record("PAYROLL_UNLOCK_OWNER_NOTIFIED", "pay_run", runId.toString());
+        return run;
+    }
+
+    @Transactional
+    public PayRunExceptionEntity dismissException(UUID exceptionId, String reason) {
+        entitlements.assertWritable();
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("Dismiss reason is required");
+        }
+        PayRunExceptionEntity ex = exceptions.findById(exceptionId).orElseThrow();
+        if (ex.isBlocker()) {
+            throw new IllegalStateException("Blockers cannot be dismissed. Fix the punch or rate.");
+        }
+        PayRun run = runs.findById(ex.getPayRunId()).orElseThrow();
+        if (PayRunLifecycle.isTerminal(run.getStatus())) {
+            throw new IllegalStateException("Unlock the run before dismissing exceptions");
+        }
+        ex.setDismissed(true);
+        ex.setDismissReason(reason.trim());
+        ex.setDismissedBy(TenantContext.userId());
+        ex.setDismissedAt(Instant.now());
+        audit.record("EXCEPTION_DISMISS", "pay_run_exception", exceptionId.toString());
+        return ex;
+    }
+
+    @Transactional
+    public BonusEntry createBonus(UUID personId, BigDecimal amount, LocalDate earnedOn, boolean discretionary, String note, UUID periodId) {
+        entitlements.assertWritable();
+        if (personId == null || amount == null || earnedOn == null) {
+            throw new IllegalArgumentException("Person, amount, and date are required");
+        }
+        BonusEntry bonus = new BonusEntry();
+        bonus.setPersonId(personId);
+        bonus.setAmount(amount);
+        bonus.setEarnedOn(earnedOn);
+        bonus.setDiscretionary(discretionary);
+        bonus.setNote(note);
+        bonus.setPayPeriodId(periodId);
+        bonuses.save(bonus);
+        audit.record("BONUS_CREATE", "bonus_entry", bonus.getId().toString());
+        return bonus;
+    }
+
+    public List<BonusEntry> listBonuses() {
+        return bonuses.findByTenantId(TenantContext.requireTenantId());
+    }
+
+    public Optional<PayRun> latestRun(UUID periodId) {
+        return latestRun(TenantContext.requireTenantId(), periodId);
+    }
+
+    @Transactional
     public PayrollView view(UUID runId) {
         UUID tenantId = TenantContext.requireTenantId();
         PayRun run = runs.findById(runId).orElseThrow();
+        applyLockIfDue(run, policies.findById(tenantId).orElseGet(TenantPolicyEntity::new));
         List<LineView> lineViews = lines.findByTenantIdAndPayRunId(tenantId, runId).stream().map(l -> new LineView(
                 l.getPersonId(), l.getWorkDate(), l.getBucket(), l.getHours(), l.getRate(), l.getAmount(), l.getExplanation()
         )).toList();
         List<ExceptionView> exceptionViews = exceptions.findByTenantIdAndPayRunId(tenantId, runId).stream().map(e -> new ExceptionView(
-                e.getPersonId(), e.getWorkDate(), e.getExceptionType(), e.getSeverity(), e.isBlocker(), e.getMessage()
+                e.getId(), e.getPersonId(), e.getWorkDate(), e.getExceptionType(), e.getSeverity(), e.isBlocker(),
+                e.getMessage(), e.isDismissed(), e.getDismissReason()
         )).toList();
-        String csv = exports.findByTenantIdAndPayRunId(tenantId, runId).stream().findFirst().map(ExportFile::getContent).orElse("");
+        List<ExportFile> files = exports.findByTenantIdAndPayRunId(tenantId, runId);
+        String csv = files.stream().filter(f -> "GUSTO".equals(f.getDestination())).findFirst()
+                .or(() -> files.stream().findFirst()).map(ExportFile::getContent).orElse("");
+        String genericCsv = files.stream().filter(f -> "GENERIC".equals(f.getDestination())).findFirst()
+                .map(ExportFile::getContent).orElse("");
         PayRunSnapshot snapshot = snapshots.findByTenantIdAndPayRunId(tenantId, runId).orElse(null);
         @SuppressWarnings("unchecked")
         Map<String, String> regularRates = snapshot != null && snapshot.getPayload().get("regularRates") instanceof Map<?, ?> map
                 ? (Map<String, String>) map
                 : Map.of();
+        boolean unlockPending = unlockRequests
+                .findFirstByTenantIdAndPayRunIdAndStatusOrderByRequestedAtDesc(tenantId, runId, "PENDING")
+                .isPresent();
         return new PayrollView(
                 run.getId(),
                 run.getPayPeriodId(),
@@ -322,13 +478,126 @@ public class PayrollRunService {
                 run.getEngineVersion(),
                 run.getApprovedBy(),
                 run.getApprovedAt(),
+                run.getApprovalIp(),
+                unlockPending,
                 regularRates,
                 lineViews,
                 exceptionViews,
+                registerRows(tenantId, lineViews),
                 csv,
+                genericCsv,
                 run.getSnapshotSha256(),
                 successChecklist(tenantId, run, lineViews, exceptionViews, csv, snapshot)
         );
+    }
+
+    private List<RegisterRow> registerRows(UUID tenantId, List<LineView> lineViews) {
+        Map<UUID, Person> byId = people.findByTenantIdAndDeletedAtIsNull(tenantId).stream()
+                .collect(Collectors.toMap(Person::getId, p -> p));
+        Map<UUID, List<LineView>> grouped = lineViews.stream().collect(Collectors.groupingBy(LineView::personId, LinkedHashMap::new, Collectors.toList()));
+        List<RegisterRow> rows = new ArrayList<>();
+        grouped.forEach((personId, personLines) -> {
+            Person person = byId.get(personId);
+            BigDecimal regH = BigDecimal.ZERO;
+            BigDecimal regPay = BigDecimal.ZERO;
+            BigDecimal otH = BigDecimal.ZERO;
+            BigDecimal otPay = BigDecimal.ZERO;
+            BigDecimal dtH = BigDecimal.ZERO;
+            BigDecimal dtPay = BigDecimal.ZERO;
+            BigDecimal premiums = BigDecimal.ZERO;
+            BigDecimal diffs = BigDecimal.ZERO;
+            BigDecimal bonus = BigDecimal.ZERO;
+            for (LineView line : personLines) {
+                BigDecimal hours = line.hours() == null ? BigDecimal.ZERO : line.hours();
+                BigDecimal amount = line.amount() == null ? BigDecimal.ZERO : line.amount();
+                switch (line.bucket() == null ? "" : line.bucket()) {
+                    case "REG" -> {
+                        regH = regH.add(hours);
+                        regPay = regPay.add(amount);
+                    }
+                    case "OT_1_5" -> {
+                        otH = otH.add(hours);
+                        otPay = otPay.add(amount);
+                    }
+                    case "OT_2_0" -> {
+                        dtH = dtH.add(hours);
+                        dtPay = dtPay.add(amount);
+                    }
+                    case "DIFFERENTIAL" -> diffs = diffs.add(amount);
+                    case "BONUS", "BONUS_TRUE_UP" -> bonus = bonus.add(amount);
+                    default -> premiums = premiums.add(amount);
+                }
+            }
+            BigDecimal gross = regPay.add(otPay).add(dtPay).add(premiums).add(diffs).add(bonus);
+            rows.add(new RegisterRow(
+                    personId,
+                    person == null ? personId.toString() : person.getLegalName(),
+                    person == null ? "" : person.getExternalEmployeeCode(),
+                    regH, regPay, otH, otPay, dtH, dtPay, premiums, diffs, bonus, gross
+            ));
+        });
+        rows.sort(Comparator.comparing(RegisterRow::legalName, Comparator.nullsLast(String::compareToIgnoreCase)));
+        return rows;
+    }
+
+    private Optional<PayRun> latestRun(UUID tenantId, UUID periodId) {
+        return runs.findByTenantIdAndPayPeriodIdOrderByCreatedAtDesc(tenantId, periodId).stream().findFirst();
+    }
+
+    private void applyLockIfDue(PayRun run, TenantPolicyEntity policy) {
+        if (run == null || !PayRunLifecycle.EXPORTED.equals(run.getStatus())) {
+            return;
+        }
+        Instant lockAt = run.getLockAt();
+        if (lockAt == null) {
+            lockAt = PayRunLifecycle.lockAt(run.getExportedAt(), policy.isLockOnExport());
+            run.setLockAt(lockAt);
+        }
+        if (PayRunLifecycle.lockDue(lockAt, Instant.now())) {
+            run.setStatus(PayRunLifecycle.LOCKED);
+            periods.findById(run.getPayPeriodId()).ifPresent(period -> period.setStatus(PayRunLifecycle.LOCKED));
+            audit.record("PAYROLL_LOCK", "pay_run", run.getId().toString());
+        }
+    }
+
+    private void saveExport(UUID runId, String destination, String content) {
+        ExportFile file = new ExportFile();
+        file.setPayRunId(runId);
+        file.setDestination(destination);
+        file.setContent(content == null ? "" : content);
+        file.setChecksumSha256(sha(content == null ? "" : content));
+        exports.save(file);
+    }
+
+    private void addWarnings(PayRun run, PayPeriod period, Person person, EarningsResult result, boolean noBonus) {
+        Hours ot = result.totals().otHours().plus(result.totals().doubleTimeHours());
+        if (ot.isGreaterThan(Hours.of("20"))) {
+            warn(run, person, "HIGH_OT", "Overtime hours exceed 20 this week — check the punches");
+        }
+        boolean meal = result.lines().stream().anyMatch(l -> l.bucket() == EarningBucket.MEAL_PREMIUM);
+        if (meal) {
+            warn(run, person, "MEAL_PREMIUM", "Meal premium generated");
+        }
+        Hours worked = result.totals().regularHours().plus(result.totals().otHours()).plus(result.totals().doubleTimeHours());
+        if ("EXEMPT_SALARY".equals(person.getExemptionStatus()) && !worked.isZero()) {
+            warn(run, person, "EXEMPT_WITH_HOURS", "Exempt classification but hours were recorded");
+        }
+        LocalDate monthEnd = YearMonth.from(period.getEndDate()).atEndOfMonth();
+        if (!period.getStartDate().isAfter(monthEnd) && !period.getEndDate().isBefore(monthEnd) && noBonus
+                && !"EXEMPT_SALARY".equals(person.getExemptionStatus())) {
+            warn(run, person, "BONUS_NOT_ENTERED", "Month-end week and no bonus entered");
+        }
+    }
+
+    private void warn(PayRun run, Person person, String type, String message) {
+        PayRunExceptionEntity entity = new PayRunExceptionEntity();
+        entity.setPayRunId(run.getId());
+        entity.setPersonId(person.getId());
+        entity.setExceptionType(type);
+        entity.setSeverity("WARNING");
+        entity.setBlocker(false);
+        entity.setMessage(message);
+        exceptions.save(entity);
     }
 
     private SuccessChecklist successChecklist(
@@ -349,7 +618,7 @@ public class PayrollRunService {
         boolean everyEmployeeHasALine = peopleIds.isEmpty() || lined.containsAll(peopleIds)
                 || peopleIds.stream().allMatch(id -> lined.contains(id) || exceptionViews.stream().anyMatch(e -> id.equals(e.personId())));
         boolean regularRateShown = !regularRatesFrom(snapshot).isEmpty() || peopleIds.isEmpty();
-        boolean approved = run.getApprovedBy() != null && "APPROVED".equals(run.getStatus());
+        boolean approved = run.getApprovedBy() != null && PayRunLifecycle.APPROVED.equals(run.getStatus());
         boolean snapshotStored = snapshot != null && snapshot.getSha256() != null;
         boolean gustoReady = csv != null && csv.contains("employee_code");
         return new SuccessChecklist(
@@ -434,7 +703,34 @@ public class PayrollRunService {
                            java.math.BigDecimal rate, java.math.BigDecimal amount, Map<String, Object> explanation) {
     }
 
-    public record ExceptionView(UUID personId, LocalDate workDate, String type, String severity, boolean blocker, String message) {
+    public record ExceptionView(
+            UUID id,
+            UUID personId,
+            LocalDate workDate,
+            String type,
+            String severity,
+            boolean blocker,
+            String message,
+            boolean dismissed,
+            String dismissReason
+    ) {
+    }
+
+    public record RegisterRow(
+            UUID personId,
+            String legalName,
+            String employeeCode,
+            BigDecimal regularHours,
+            BigDecimal regularPay,
+            BigDecimal otHours,
+            BigDecimal otPay,
+            BigDecimal dtHours,
+            BigDecimal dtPay,
+            BigDecimal premiums,
+            BigDecimal differentials,
+            BigDecimal bonus,
+            BigDecimal grossEarningsSubmitted
+    ) {
     }
 
     public record PayrollView(
@@ -444,10 +740,14 @@ public class PayrollRunService {
             String engineVersion,
             UUID approvedBy,
             Instant approvedAt,
+            String approvalIp,
+            boolean unlockPending,
             Map<String, String> regularRates,
             List<LineView> lines,
             List<ExceptionView> exceptions,
+            List<RegisterRow> register,
             String gustoCsv,
+            String genericCsv,
             String snapshotSha256,
             SuccessChecklist success
     ) {
