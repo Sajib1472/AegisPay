@@ -11,17 +11,19 @@ import com.aegispay.app.payroll.PayPeriod;
 import com.aegispay.app.payroll.PayPeriodRepository;
 import com.aegispay.app.payroll.PayRun;
 import com.aegispay.app.payroll.PayrollRunService;
+import com.aegispay.app.platform.ops.IdempotencyService;
 import com.aegispay.app.platform.tenancy.TenantContext;
 import com.aegispay.app.rules.RulePackResolver;
 import com.aegispay.app.time.Punch;
 import com.aegispay.app.time.PunchImportService;
-import com.aegispay.app.time.PunchRepository;
+import com.aegispay.app.time.PunchQueryService;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,30 +41,33 @@ public class ApiController {
     private final LocationRepository locations;
     private final PersonRepository people;
     private final EmploymentRepository employments;
-    private final PunchRepository punches;
+    private final PunchQueryService punchQuery;
     private final PunchImportService punchImportService;
     private final PayPeriodRepository periods;
     private final PayrollRunService payrollRunService;
     private final EntitlementService entitlements;
+    private final IdempotencyService idempotency;
 
     public ApiController(
             LocationRepository locations,
             PersonRepository people,
             EmploymentRepository employments,
-            PunchRepository punches,
+            PunchQueryService punchQuery,
             PunchImportService punchImportService,
             PayPeriodRepository periods,
             PayrollRunService payrollRunService,
-            EntitlementService entitlements
+            EntitlementService entitlements,
+            IdempotencyService idempotency
     ) {
         this.locations = locations;
         this.people = people;
         this.employments = employments;
-        this.punches = punches;
+        this.punchQuery = punchQuery;
         this.punchImportService = punchImportService;
         this.periods = periods;
         this.payrollRunService = payrollRunService;
         this.entitlements = entitlements;
+        this.idempotency = idempotency;
     }
 
     @GetMapping("/locations")
@@ -116,8 +121,11 @@ public class ApiController {
     }
 
     @GetMapping("/punches")
-    public List<Punch> punches() {
-        return punches.findByTenantIdOrderByAdjustedAtDesc(TenantContext.requireTenantId());
+    public PageResponse<Punch> punches(
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer limit
+    ) {
+        return punchQuery.page(cursor, limit);
     }
 
     @PostMapping(value = "/punches/import", consumes = MediaType.TEXT_PLAIN_VALUE)
@@ -126,10 +134,18 @@ public class ApiController {
             @RequestParam UUID locationId,
             @RequestParam(defaultValue = "America/Los_Angeles") String timeZone,
             @RequestParam(defaultValue = "upload.csv") String fileName,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody String csv
     ) {
         entitlements.assertWritable();
-        return punchImportService.importCsv(fileName, csv, locationId, ZoneId.of(timeZone));
+        return idempotency.run(
+                idempotencyKey,
+                "POST",
+                "/api/v1/punches/import",
+                csv,
+                PunchImportService.ImportResult.class,
+                () -> punchImportService.importCsv(fileName, csv, locationId, ZoneId.of(timeZone))
+        );
     }
 
     @GetMapping("/pay-periods")
@@ -153,13 +169,23 @@ public class ApiController {
     @PreAuthorize("hasAnyAuthority('PAYROLL_APPROVE','MANAGE_ORG')")
     public PayrollRunService.PayrollView calculate(
             @PathVariable UUID periodId,
-            @RequestParam(defaultValue = "HISTORICAL") String law
+            @RequestParam(defaultValue = "HISTORICAL") String law,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey
     ) {
         RulePackResolver.LawMode mode = "CURRENT_LAW".equalsIgnoreCase(law)
                 ? RulePackResolver.LawMode.CURRENT_LAW
                 : RulePackResolver.LawMode.HISTORICAL;
-        PayRun run = payrollRunService.calculate(periodId, mode);
-        return payrollRunService.view(run.getId());
+        return idempotency.run(
+                idempotencyKey,
+                "POST",
+                "/api/v1/pay-periods/" + periodId + "/runs",
+                periodId + ":" + mode,
+                PayrollRunService.PayrollView.class,
+                () -> {
+                    PayRun run = payrollRunService.calculate(periodId, mode);
+                    return payrollRunService.view(run.getId());
+                }
+        );
     }
 
     @GetMapping("/pay-runs/{runId}")

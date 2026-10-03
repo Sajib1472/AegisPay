@@ -43,6 +43,10 @@ public final class TenantContext {
         return REQUEST_ID.get();
     }
 
+    public static void setRequestId(String requestId) {
+        REQUEST_ID.set(requestId);
+    }
+
     public static void clear() {
         TENANT.remove();
         USER.remove();

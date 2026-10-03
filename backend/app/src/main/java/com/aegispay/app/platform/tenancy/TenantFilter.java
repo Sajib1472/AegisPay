@@ -22,6 +22,7 @@ public class TenantFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String requestId = Optional.ofNullable(request.getHeader("X-Request-Id")).orElse(UUID.randomUUID().toString());
         response.setHeader("X-Request-Id", requestId);
+        TenantContext.setRequestId(requestId);
         try {
             filterChain.doFilter(request, response);
         } finally {

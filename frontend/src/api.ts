@@ -169,7 +169,7 @@ export const api = {
   me: () => request<AuthResponse>("/api/v1/auth/me"),
   locations: () => request<Location[]>("/api/v1/locations"),
   people: () => request<Person[]>("/api/v1/people"),
-  punches: () => request<Punch[]>("/api/v1/punches"),
+  punches: () => request<{ requestId: string; items: Punch[]; nextCursor: string | null; limit: number }>("/api/v1/punches"),
   importPunches: (locationId: string, csv: string, fileName: string) =>
     request(`/api/v1/punches/import?locationId=${locationId}&fileName=${encodeURIComponent(fileName)}`, {
       method: "POST",

@@ -82,11 +82,11 @@ class TenantIsolationIT {
 
         mvc.perform(get("/api/v1/punches").header("Authorization", "Bearer " + tokenA))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0]").exists());
+                .andExpect(jsonPath("$.items[0]").exists());
 
         mvc.perform(get("/api/v1/punches").header("Authorization", "Bearer " + tokenB))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$.items", hasSize(0)));
     }
 
     private String signup(String clinic, String email) throws Exception {

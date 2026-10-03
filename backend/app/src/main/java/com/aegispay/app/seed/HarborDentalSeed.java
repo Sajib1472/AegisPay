@@ -172,12 +172,23 @@ public class HarborDentalSeed implements CommandLineRunner {
         Person jordan = person("1002", "Jordan Blake", "jordan@harbordental.example", "NON_EXEMPT");
         Person sam = person("1003", "Sam Patel", "sam@harbordental.example", "NON_EXEMPT");
         Person lee = person("2001", "Dr. Priya Lee", "priya@harbordental.example", "EXEMPT_SALARY");
-        people.saveAll(List.of(maria, jordan, sam, lee));
+        Person nina = person("1004", "Nina Cho", "nina@harbordental.example", "NON_EXEMPT");
+        Person chris = person("1005", "Chris Nguyen", "chris@harbordental.example", "NON_EXEMPT");
+        Person devon = person("1006", "Devon Brooks", "devon@harbordental.example", "NON_EXEMPT");
+        Person kai = person("1007", "Kai Ramirez", "kai@harbordental.example", "NON_EXEMPT");
+        people.saveAll(List.of(maria, jordan, sam, lee, nina, chris, devon, kai));
+
+        JobCode assist = job("ASSIST", "Dental assistant");
+        jobs.save(assist);
 
         staff(maria, la, rdh, new BigDecimal("42.00"));
         staff(jordan, la, rda, new BigDecimal("28.00"));
         staff(sam, austin, front, new BigDecimal("22.00"));
         staff(lee, la, rdh, new BigDecimal("0.00"));
+        staff(nina, la, rda, new BigDecimal("27.00"));
+        staff(chris, la, front, new BigDecimal("24.00"));
+        staff(devon, austin, assist, new BigDecimal("20.00"));
+        staff(kai, austin, rdh, new BigDecimal("40.00"));
 
         CompensationPlan hygiene = new CompensationPlan();
         hygiene.setPersonId(maria.getId());
@@ -223,6 +234,32 @@ public class HarborDentalSeed implements CommandLineRunner {
         punch(sam, austin, week.plusDays(4), 8, 0, "IN", ct);
         punch(sam, austin, week.plusDays(4), 18, 0, "OUT", ct);
 
+        // Week 2: Saturday differential (Nina), extra staff, and a second hygienist week
+        LocalDate week2 = week.plusDays(7);
+        punch(nina, la, week.plusDays(5), 8, 0, "IN", pt);
+        punch(nina, la, week.plusDays(5), 12, 0, "BREAK_START", pt);
+        punch(nina, la, week.plusDays(5), 12, 30, "BREAK_END", pt);
+        punch(nina, la, week.plusDays(5), 16, 0, "OUT", pt);
+        attest(nina, week.plusDays(5), "YES", "YES");
+
+        for (int d = 0; d < 5; d++) {
+            LocalDate day = week2.plusDays(d);
+            punch(chris, la, day, 8, 0, "IN", pt);
+            punch(chris, la, day, 12, 0, "BREAK_START", pt);
+            punch(chris, la, day, 12, 30, "BREAK_END", pt);
+            punch(chris, la, day, 17, 0, "OUT", pt);
+            punch(devon, austin, day, 8, 0, "IN", ct);
+            punch(devon, austin, day, 17, 0, "OUT", ct);
+            punch(kai, austin, day, 8, 0, "IN", ct);
+            punch(kai, austin, day, 12, 0, "BREAK_START", ct);
+            punch(kai, austin, day, 12, 30, "BREAK_END", ct);
+            punch(kai, austin, day, 17, 0, "OUT", ct);
+            punch(maria, la, day, 8, 0, "IN", pt);
+            punch(maria, la, day, 12, 0, "BREAK_START", pt);
+            punch(maria, la, day, 12, 30, "BREAK_END", pt);
+            punch(maria, la, day, 17, 0, "OUT", pt);
+        }
+
         BonusEntry bonus = new BonusEntry();
         bonus.setPersonId(maria.getId());
         bonus.setAmount(new BigDecimal("120.00"));
@@ -232,9 +269,9 @@ public class HarborDentalSeed implements CommandLineRunner {
         bonuses.save(bonus);
 
         PayPeriod period = new PayPeriod();
-        period.setPeriodType("WEEKLY");
+        period.setPeriodType("BIWEEKLY");
         period.setStartDate(week);
-        period.setEndDate(week.plusDays(6));
+        period.setEndDate(week.plusDays(13));
         period.setStatus("OPEN");
         periods.save(period);
 
@@ -306,6 +343,14 @@ public class HarborDentalSeed implements CommandLineRunner {
         rate.setAmount(hourly);
         rate.setEffectiveFrom(LocalDate.of(2022, 3, 1));
         rates.save(rate);
+        if ("RDA".equals(job.getCode()) && "1004".equals(person.getExternalEmployeeCode())) {
+            PayRate weekend = new PayRate();
+            weekend.setAssignmentId(assignment.getId());
+            weekend.setRateType("DIFFERENTIAL");
+            weekend.setAmount(new BigDecimal("4.00"));
+            weekend.setEffectiveFrom(LocalDate.of(2022, 3, 1));
+            rates.save(weekend);
+        }
     }
 
     private void punch(Person person, Location location, LocalDate date, int hour, int minute, String type, ZoneId zone) {

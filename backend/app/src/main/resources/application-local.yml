@@ -1,0 +1,15 @@
+spring:
+  jpa:
+    show-sql: false
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    com.aegispay: DEBUG
+    org.springframework.web: INFO
+
+aegispay:
+  seed: true
+  redis:
+    required: false

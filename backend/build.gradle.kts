@@ -1,5 +1,6 @@
 plugins {
     java
+    id("com.diffplug.spotless") version "6.25.0" apply false
 }
 
 allprojects {
@@ -9,6 +10,7 @@ allprojects {
 
 subprojects {
     apply(plugin = "java")
+    apply(plugin = "com.diffplug.spotless")
 
     java {
         toolchain {
@@ -18,6 +20,13 @@ subprojects {
 
     repositories {
         mavenCentral()
+    }
+
+    configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+        java {
+            target("src/**/*.java")
+            googleJavaFormat()
+        }
     }
 
     tasks.withType<Test> {

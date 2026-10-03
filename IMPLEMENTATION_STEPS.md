@@ -323,6 +323,8 @@ Effective dating is mandatory. A raise on Wednesday must not rewrite Monday’s 
 
 ### 5.1 Create the Gradle project
 
+Scaffold lives in `backend/` (`app` + `engine`), with Spotless, `application-local.yml` / `application-prod.yml` / `application-test.yml`, actuator health+info, Problem Details, `Idempotency-Key` on import/run, and cursor pagination on punches. Harbor Dental seed is eight people and two weeks of punches.
+
 - `com.aegispay` base package
 - Modules: `app` (Spring Boot), `engine` (pure Java, no Spring), `engine` is a dependency of `app`
 - Enable: Spring Web, Validation, Security, Data JPA, Flyway, Actuator, Mail (later)

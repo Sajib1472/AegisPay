@@ -13,9 +13,9 @@ export default function TimePage() {
 
   useEffect(() => {
     Promise.all([api.locations(), api.punches()])
-      .then(([locs, rows]) => {
+      .then(([locs, page]) => {
         setLocations(locs);
-        setPunches(rows);
+        setPunches(page.items);
         if (locs[0]) setLocationId(locs[0].id);
       })
       .catch((err) => setError(err.message));
@@ -26,7 +26,7 @@ export default function TimePage() {
     try {
       const result = await api.importPunches(locationId, csv, "office-export.csv");
       setMessage(JSON.stringify(result));
-      setPunches(await api.punches());
+      setPunches((await api.punches()).items);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Import failed");
     }

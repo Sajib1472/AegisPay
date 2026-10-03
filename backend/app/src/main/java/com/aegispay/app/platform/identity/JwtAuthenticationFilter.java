@@ -34,7 +34,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             try {
                 JwtService.Claims claims = jwtService.parse(header.substring(7));
-                String requestId = Optional.ofNullable(request.getHeader("X-Request-Id"))
+                String requestId = Optional.ofNullable(TenantContext.requestId())
+                        .or(() -> Optional.ofNullable(request.getHeader("X-Request-Id")))
                         .orElse(UUID.randomUUID().toString());
                 TenantContext.set(claims.tenantId(), claims.userId(), claims.role(), requestId);
                 List<SimpleGrantedAuthority> authorities = new ArrayList<>();

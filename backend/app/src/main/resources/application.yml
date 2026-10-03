@@ -33,19 +33,22 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-# Redis 7 is the frozen job-queue/rate-limit target. Auto-config stays off until a queue is wired.
-# Set AEGISPAY_REDIS=true only when Redis is required.
-
 server:
-  port: 8080
+  port: ${PORT:8080}
   error:
     include-message: always
+    include-stacktrace: never
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized
   info:
     env:
       enabled: true
@@ -64,28 +67,8 @@ aegispay:
   cors:
     origin: ${FRONTEND_ORIGIN:http://localhost:5173}
   seed: ${AEGISPAY_SEED:false}
-
----
-spring:
-  config:
-    activate:
-      on-profile: local
-  jpa:
-    show-sql: false
-
-aegispay:
-  seed: true
-
----
-spring:
-  config:
-    activate:
-      on-profile: test
-  jpa:
-    show-sql: false
-
-aegispay:
-  seed: false
-  jwt:
-    secret: test-secret-for-architecture-isolation-tests-ok
-
+  redis:
+    required: ${AEGISPAY_REDIS:false}
+    url: ${REDIS_URL:redis://localhost:6379}
+  build:
+    commit: ${GIT_COMMIT:dev}

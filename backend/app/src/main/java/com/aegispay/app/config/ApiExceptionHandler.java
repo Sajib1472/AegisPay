@@ -1,5 +1,7 @@
 package com.aegispay.app.config;
 
+import com.aegispay.app.platform.ops.ScaffoldConventions;
+import com.aegispay.app.platform.tenancy.TenantContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
@@ -11,22 +13,24 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     ProblemDetail badRequest(IllegalArgumentException ex) {
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
-        detail.setTitle("Bad request");
-        return detail;
+        return problem(HttpStatus.BAD_REQUEST, "Bad request", ex.getMessage());
     }
 
     @ExceptionHandler(IllegalStateException.class)
     ProblemDetail conflict(IllegalStateException ex) {
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
-        detail.setTitle("Conflict");
-        return detail;
+        return problem(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     ProblemDetail forbidden(AccessDeniedException ex) {
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Missing permission");
-        detail.setTitle("Forbidden");
-        return detail;
+        return problem(HttpStatus.FORBIDDEN, "Forbidden", "Missing permission");
+    }
+
+    private static ProblemDetail problem(HttpStatus status, String title, String detail) {
+        ProblemDetail body = ProblemDetail.forStatusAndDetail(status, detail);
+        body.setTitle(title);
+        body.setProperty("requestId", TenantContext.requestId());
+        body.setProperty("type", ScaffoldConventions.PROBLEM_JSON);
+        return body;
     }
 }

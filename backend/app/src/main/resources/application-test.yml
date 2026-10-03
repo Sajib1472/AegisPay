@@ -1,0 +1,12 @@
+spring:
+  jpa:
+    show-sql: false
+  flyway:
+    enabled: true
+
+aegispay:
+  seed: false
+  redis:
+    required: false
+  jwt:
+    secret: test-secret-for-architecture-isolation-tests-ok
