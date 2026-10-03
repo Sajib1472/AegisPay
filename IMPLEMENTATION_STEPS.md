@@ -2,7 +2,7 @@
 
 **Product:** Multi-tenant labor-compliance and earnings engine for independent outpatient clinic groups  
 **Stack (locked for this project):** Java 21, Spring Boot 3, PostgreSQL, Redis, React + TypeScript  
-**Status of this document:** Blueprint plus v0.1 codebase (engine, API, Harbor Dental seed, React shell). Do not treat the engine as counsel-reviewed.
+**Status of this document:** Blueprint plus v0.2 codebase through Step 22. Engine is not counsel-reviewed. See `docs/READY_TO_SELL.md` before taking a card.
 
 ---
 
@@ -1090,6 +1090,16 @@ Register: `docs/RISKS.md`. CA math, tax-filing creep, PHI, engine forks, 50-stat
 ---
 
 ## 23. Immediate next action when you are ready to write code
+
+The scaffold listed below is in this folder (`backend/` Gradle `app` + `engine`, `frontend/` Vite React, Docker Compose, Flyway through V16). Immediate next actions are operational, not greenfield:
+
+1. Restore a backup on staging and date it in `runbooks/restore-backup.md`
+2. Run one de-identified clinic file through shadow compare
+3. Bind E&O (or write the note) before a paid CA tenant
+4. Have employment counsel review the CA pack
+5. Fill `step-01-validation/02-buyer-pipeline.csv` if that work is still undone
+
+Do not add an EHR, 50-state packs, or tax remittance. Use this document as the scope lock and the sales story.
 
 When you say to proceed, the first engineering tasks are:
 
