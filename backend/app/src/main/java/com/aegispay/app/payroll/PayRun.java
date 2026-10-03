@@ -60,6 +60,9 @@ public class PayRun extends TenantEntity {
     @Column(name = "lock_at")
     private Instant lockAt;
 
+    @Column(name = "audit_pdf_sha256")
+    private String auditPdfSha256;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -173,5 +176,13 @@ public class PayRun extends TenantEntity {
 
     public void setLockAt(Instant lockAt) {
         this.lockAt = lockAt;
+    }
+
+    public String getAuditPdfSha256() {
+        return auditPdfSha256;
+    }
+
+    public void setAuditPdfSha256(String auditPdfSha256) {
+        this.auditPdfSha256 = auditPdfSha256;
     }
 }

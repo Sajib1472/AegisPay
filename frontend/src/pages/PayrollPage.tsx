@@ -287,6 +287,11 @@ export default function PayrollPage() {
           </table>
           <h4>Gusto export</h4>
           <pre className="csv">{view.gustoCsv}</pre>
+          <p>
+            <button className="ghost" onClick={() => api.downloadAuditPack(view.runId).catch((err) => setError(err.message))}>
+              Download audit pack PDF
+            </button>
+          </p>
           {view.genericCsv ? (
             <>
               <h4>Generic CSV</h4>

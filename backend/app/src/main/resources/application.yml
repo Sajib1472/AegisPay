@@ -74,3 +74,5 @@ aegispay:
     payroll-approve: ${AEGISPAY_MFA_PAYROLL_APPROVE:false}
   build:
     commit: ${GIT_COMMIT:dev}
+  storage:
+    local-dir: ${AEGISPAY_OBJECT_DIR:${user.home}/.aegispay/objects}

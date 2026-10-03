@@ -701,6 +701,8 @@ Simple form: person, amount, date, discretionary yes/no, allocate-to period. Eng
 
 ## 11. Step 11 — Audit pack (the feature that justifies $99 extra)
 
+Server PDF (`AuditPackService`, deterministic `AuditPdfRenderer`). Bytes live in `LocalObjectStore`; `pay_run.audit_pdf_sha256` must match on regenerate.
+
 ### 11.1 What the PDF contains
 
 1. Cover: tenant, period, engine version, rule packs, approver

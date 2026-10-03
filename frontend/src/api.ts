@@ -256,5 +256,23 @@ export const api = {
     request<{ timeZone: string; jurisdictions: string[]; confirm: string }>(
       `/api/v1/wizard/jurisdictions?city=${encodeURIComponent(city)}&region=${encodeURIComponent(region)}`
     ),
-  catalog: () => request<{ plans: { code: string; name: string; who: string; monthlyCents: number; maxLocations: number; maxEmployees: number; support: string; auditPackCents: number }[]; noFreeForeverPlan: string; positioning: string[] }>("/api/v1/catalog")
+  catalog: () => request<{ plans: { code: string; name: string; who: string; monthlyCents: number; maxLocations: number; maxEmployees: number; support: string; auditPackCents: number }[]; noFreeForeverPlan: string; positioning: string[] }>("/api/v1/catalog"),
+  generateAuditPack: (runId: string) =>
+    request<{ sha256: string; bytes: number; fileName: string }>(`/api/v1/pay-runs/${runId}/audit-pack`, { method: "POST" }),
+  downloadAuditPack: async (runId: string) => {
+    const token = getToken();
+    const response = await fetch(`/api/v1/pay-runs/${runId}/audit-pack`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `aegispay-audit-${runId.slice(0, 8)}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 };

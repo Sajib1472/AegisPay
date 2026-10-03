@@ -108,6 +108,12 @@ public class EntitlementService {
         }
     }
 
+    public void assertAuditPack() {
+        if (!current().auditPack()) {
+            throw new IllegalStateException("Audit Pack is a $99 add-on. Enable it on the Group or Network plan.");
+        }
+    }
+
     public Set<String> extraCodes() {
         return extras.findByTenantId(TenantContext.requireTenantId()).stream()
                 .filter(TenantEntitlement::isEnabled)
