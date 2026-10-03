@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 280" role="img" aria-label="AegisPay">
+  <rect width="1200" height="280" fill="#12263a"/>
+  <rect x="0" y="0" width="8" height="280" fill="#c9a227"/>
+  <text x="56" y="118" fill="#f4f1ea" font-family="Georgia, 'Times New Roman', serif" font-size="56" letter-spacing="4">AegisPay</text>
+  <text x="58" y="168" fill="#c9d3de" font-family="Georgia, 'Times New Roman', serif" font-size="22">Hours, lawful  before Gusto pays them.</text>
+  <text x="58" y="220" fill="#8fa0b3" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">JAVA 21  ·  SPRING BOOT  ·  POSTGRES 16  ·  ENGINE 0.2.0</text>
+</svg>
