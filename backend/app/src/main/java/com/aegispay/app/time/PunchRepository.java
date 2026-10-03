@@ -11,4 +11,6 @@ public interface PunchRepository extends JpaRepository<Punch, UUID> {
             UUID tenantId, UUID personId, Instant from, Instant to);
 
     List<Punch> findByTenantIdOrderByAdjustedAtDesc(UUID tenantId);
+
+    java.util.Optional<Punch> findByTenantIdAndId(UUID tenantId, UUID id);
 }

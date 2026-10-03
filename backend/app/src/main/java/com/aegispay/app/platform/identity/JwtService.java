@@ -21,12 +21,14 @@ public class JwtService {
 
     private final String issuer;
     private final int accessMinutes;
+    private final int refreshDays;
     private final byte[] secret;
 
     public JwtService(
             @Value("${aegispay.jwt.secret}") String secret,
             @Value("${aegispay.jwt.issuer}") String issuer,
-            @Value("${aegispay.jwt.access-minutes}") int accessMinutes
+            @Value("${aegispay.jwt.access-minutes}") int accessMinutes,
+            @Value("${aegispay.jwt.refresh-days:7}") int refreshDays
     ) {
         byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
         if (bytes.length < 32) {
@@ -35,13 +37,14 @@ public class JwtService {
         this.secret = bytes.length >= 32 ? java.util.Arrays.copyOf(bytes, 32) : bytes;
         this.issuer = issuer;
         this.accessMinutes = accessMinutes;
+        this.refreshDays = refreshDays;
     }
 
     public String issueAccessToken(AppUser user) {
         try {
             Instant now = Instant.now();
             List<String> perms = Permission.forRole(user.getRole()).stream().map(Enum::name).toList();
-            JWTClaimsSet claims = new JWTClaimsSet.Builder()
+            JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
                     .issuer(issuer)
                     .subject(user.getId().toString())
                     .claim("tid", user.getTenantId().toString())
@@ -50,9 +53,11 @@ public class JwtService {
                     .claim("perms", perms)
                     .issueTime(Date.from(now))
                     .expirationTime(Date.from(now.plusSeconds(accessMinutes * 60L)))
-                    .jwtID(UUID.randomUUID().toString())
-                    .build();
-            SignedJWT jwt = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claims);
+                    .jwtID(UUID.randomUUID().toString());
+            if (user.getLocationId() != null) {
+                builder.claim("lid", user.getLocationId().toString());
+            }
+            SignedJWT jwt = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), builder.build());
             jwt.sign(new MACSigner(secret));
             return jwt.serialize();
         } catch (JOSEException e) {
@@ -76,13 +81,18 @@ public class JwtService {
                     UUID.fromString(claims.getStringClaim("tid")),
                     claims.getStringClaim("role"),
                     claims.getStringClaim("email"),
-                    perms == null ? List.of() : perms
+                    perms == null ? List.of() : perms,
+                    claims.getStringClaim("lid") == null ? null : UUID.fromString(claims.getStringClaim("lid"))
             );
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid token", e);
         }
     }
 
-    public record Claims(UUID userId, UUID tenantId, String role, String email, List<String> permissions) {
+    public record Claims(UUID userId, UUID tenantId, String role, String email, List<String> permissions, UUID locationId) {
+    }
+
+    public int refreshDays() {
+        return refreshDays;
     }
 }

@@ -381,7 +381,7 @@ A fake “Harbor Dental Group” with 2 locations (Los Angeles, Austin), 8 emplo
 
 ### 6.1 Authentication
 
-v1: email + password with Spring Security, JWTs (access 15 min, refresh 7 days, rotate refresh tokens).
+v1: email + password with Spring Security, JWTs (access 15 min, refresh 7 days, rotate refresh tokens). Invites expire in 48 hours. Cross-tenant punch ids return 404. MFA for `PAYROLL_APPROVE` is coded and gated by `aegispay.mfa.payroll-approve` (off until you take cards for more than three tenants).
 
 - Argon2id or BCrypt cost ≥ 12 for passwords
 - Email verification required before the tenant can run payroll

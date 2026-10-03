@@ -14,6 +14,8 @@ import com.aegispay.app.org.PersonRepository;
 import com.aegispay.app.org.TenantPolicyEntity;
 import com.aegispay.app.org.TenantPolicyRepository;
 import com.aegispay.app.platform.audit.AuditRecorder;
+import com.aegispay.app.platform.identity.AuthService;
+import com.aegispay.app.platform.tenancy.TenantContext;
 import com.aegispay.app.rules.RulePackResolver;
 import com.aegispay.app.time.MealAttestation;
 import com.aegispay.app.time.MealAttestationRepository;
@@ -77,6 +79,7 @@ public class PayrollRunService {
     private final EntitlementService entitlements;
     private final RulePackResolver rulePacks;
     private final AuditRecorder audit;
+    private final AuthService auth;
 
     public PayrollRunService(
             PayPeriodRepository periods,
@@ -96,7 +99,8 @@ public class PayrollRunService {
             PayRunSnapshotRepository snapshots,
             EntitlementService entitlements,
             RulePackResolver rulePacks,
-            AuditRecorder audit
+            AuditRecorder audit,
+            AuthService auth
     ) {
         this.periods = periods;
         this.runs = runs;
@@ -116,6 +120,7 @@ public class PayrollRunService {
         this.entitlements = entitlements;
         this.rulePacks = rulePacks;
         this.audit = audit;
+        this.auth = auth;
     }
 
     @Transactional
@@ -126,6 +131,7 @@ public class PayrollRunService {
     @Transactional
     public PayRun calculate(UUID periodId, RulePackResolver.LawMode lawMode) {
         entitlements.assertWritable();
+        auth.assertCanRunPayroll(auth.requireUser());
         UUID tenantId = TenantContext.requireTenantId();
         PayPeriod period = periods.findById(periodId).orElseThrow();
         TenantPolicyEntity policy = policies.findById(tenantId).orElseGet(TenantPolicyEntity::new);

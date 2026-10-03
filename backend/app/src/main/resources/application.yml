@@ -70,5 +70,7 @@ aegispay:
   redis:
     required: ${AEGISPAY_REDIS:false}
     url: ${REDIS_URL:redis://localhost:6379}
+  mfa:
+    payroll-approve: ${AEGISPAY_MFA_PAYROLL_APPROVE:false}
   build:
     commit: ${GIT_COMMIT:dev}

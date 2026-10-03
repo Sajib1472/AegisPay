@@ -33,4 +33,9 @@ public class ApiExceptionHandler {
         body.setProperty("type", ScaffoldConventions.PROBLEM_JSON);
         return body;
     }
+
+    @ExceptionHandler(com.aegispay.app.web.NotFoundException.class)
+    ProblemDetail notFound(com.aegispay.app.web.NotFoundException ex) {
+        return problem(HttpStatus.NOT_FOUND, "Not found", ex.getMessage());
+    }
 }

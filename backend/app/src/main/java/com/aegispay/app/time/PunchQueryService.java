@@ -1,5 +1,6 @@
 package com.aegispay.app.time;
 
+import com.aegispay.app.platform.identity.UserRole;
 import com.aegispay.app.platform.ops.ScaffoldConventions;
 import com.aegispay.app.platform.tenancy.TenantContext;
 import com.aegispay.app.web.PageResponse;
@@ -22,6 +23,10 @@ public class PunchQueryService {
         UUID tenantId = TenantContext.requireTenantId();
         PunchCursor cursor = PunchCursor.parse(cursorRaw);
         List<Punch> rows = punches.findByTenantIdOrderByAdjustedAtDesc(tenantId);
+        UUID locationScope = TenantContext.locationId();
+        if (locationScope != null && UserRole.LOCATION_MANAGER.name().equals(TenantContext.role())) {
+            rows = rows.stream().filter(p -> locationScope.equals(p.getLocationId())).toList();
+        }
         List<Punch> sliced = rows.stream()
                 .filter(p -> cursor == null || p.getAdjustedAt().isBefore(cursor.adjustedAt())
                         || (p.getAdjustedAt().equals(cursor.adjustedAt()) && p.getId().toString().compareTo(cursor.id().toString()) < 0))

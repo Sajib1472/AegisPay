@@ -37,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String requestId = Optional.ofNullable(TenantContext.requestId())
                         .or(() -> Optional.ofNullable(request.getHeader("X-Request-Id")))
                         .orElse(UUID.randomUUID().toString());
-                TenantContext.set(claims.tenantId(), claims.userId(), claims.role(), requestId);
+                TenantContext.set(claims.tenantId(), claims.userId(), claims.role(), requestId, claims.locationId());
                 List<SimpleGrantedAuthority> authorities = new ArrayList<>();
                 authorities.add(new SimpleGrantedAuthority("ROLE_" + claims.role()));
                 for (String perm : claims.permissions()) {

@@ -87,6 +87,16 @@ class TenantIsolationIT {
         mvc.perform(get("/api/v1/punches").header("Authorization", "Bearer " + tokenB))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items", hasSize(0)));
+
+        String punchId = com.jayway.jsonpath.JsonPath.read(
+                mvc.perform(get("/api/v1/punches").header("Authorization", "Bearer " + tokenA))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString(),
+                "$.items[0].id"
+        );
+        mvc.perform(get("/api/v1/punches/" + punchId).header("Authorization", "Bearer " + tokenB))
+                .andExpect(status().isNotFound());
     }
 
     private String signup(String clinic, String email) throws Exception {

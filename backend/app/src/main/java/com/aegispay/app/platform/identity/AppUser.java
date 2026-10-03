@@ -41,6 +41,15 @@ public class AppUser extends TenantEntity {
     @Column(name = "user_kind", nullable = false)
     private String userKind = "TENANT";
 
+    @Column(name = "location_id")
+    private UUID locationId;
+
+    @Column(name = "totp_secret")
+    private String totpSecret;
+
+    @Column(name = "totp_confirmed", nullable = false)
+    private boolean totpConfirmed;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -109,6 +118,30 @@ public class AppUser extends TenantEntity {
 
     public void setUserKind(String userKind) {
         this.userKind = userKind;
+    }
+
+    public UUID getLocationId() {
+        return locationId;
+    }
+
+    public void setLocationId(UUID locationId) {
+        this.locationId = locationId;
+    }
+
+    public String getTotpSecret() {
+        return totpSecret;
+    }
+
+    public void setTotpSecret(String totpSecret) {
+        this.totpSecret = totpSecret;
+    }
+
+    public boolean isTotpConfirmed() {
+        return totpConfirmed;
+    }
+
+    public void setTotpConfirmed(boolean totpConfirmed) {
+        this.totpConfirmed = totpConfirmed;
     }
 
     public Instant getCreatedAt() {
