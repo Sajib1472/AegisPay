@@ -15,11 +15,26 @@ spring:
           time_zone: UTC
   flyway:
     enabled: true
+  profiles:
+    default: local
   jackson:
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
-  profiles:
-    default: local
+    generator:
+      write-bigdecimal-as-plain: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# Redis 7 is the frozen job-queue/rate-limit target. Auto-config stays off until a queue is wired.
+# Set AEGISPAY_REDIS=true only when Redis is required.
 
 server:
   port: 8080
@@ -60,3 +75,17 @@ spring:
 
 aegispay:
   seed: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  jpa:
+    show-sql: false
+
+aegispay:
+  seed: false
+  jwt:
+    secret: test-secret-for-architecture-isolation-tests-ok
+

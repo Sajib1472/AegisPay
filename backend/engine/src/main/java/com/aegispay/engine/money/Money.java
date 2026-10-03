@@ -5,7 +5,8 @@ import java.math.RoundingMode;
 import java.util.Objects;
 
 /**
- * Money uses scale 4 internally and scale 2 on statements.
+ * Money freeze: BigDecimal scale 4 internally, scale 2 on statements, HALF_UP.
+ * SQL type NUMERIC(12,4). Never float/double.
  */
 public final class Money {
 
@@ -25,10 +26,6 @@ public final class Money {
 
     public static Money of(String value) {
         return new Money(new BigDecimal(value));
-    }
-
-    public static Money of(double value) {
-        return new Money(BigDecimal.valueOf(value));
     }
 
     public Money plus(Money other) {

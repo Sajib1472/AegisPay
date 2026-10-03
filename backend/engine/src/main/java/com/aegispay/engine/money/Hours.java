@@ -6,7 +6,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Hours stored at 4 decimal places. 0.25 = 15 minutes.
+ * Hours freeze: NUMERIC(8,4). 0.25 = 15 minutes. HALF_UP.
  */
 public final class Hours {
 

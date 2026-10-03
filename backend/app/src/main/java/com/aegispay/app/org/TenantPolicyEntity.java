@@ -56,6 +56,10 @@ public class TenantPolicyEntity {
         return punchRoundMinutes;
     }
 
+    public void setPunchRoundMinutes(int punchRoundMinutes) {
+        this.punchRoundMinutes = punchRoundMinutes;
+    }
+
     public boolean isMealWaiverUnderSixHours() {
         return mealWaiverUnderSixHours;
     }

@@ -29,6 +29,10 @@ public class PayRun extends TenantEntity {
     @Column(name = "rule_pack_versions", nullable = false)
     private Object rulePackVersions;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "rule_pack_ids", nullable = false)
+    private Object rulePackIds;
+
     @Column(name = "created_by")
     private UUID createdBy;
 
@@ -68,8 +72,20 @@ public class PayRun extends TenantEntity {
         this.engineVersion = engineVersion;
     }
 
+    public Object getRulePackVersions() {
+        return rulePackVersions;
+    }
+
     public void setRulePackVersions(Object rulePackVersions) {
         this.rulePackVersions = rulePackVersions;
+    }
+
+    public Object getRulePackIds() {
+        return rulePackIds;
+    }
+
+    public void setRulePackIds(Object rulePackIds) {
+        this.rulePackIds = rulePackIds;
     }
 
     public void setCreatedBy(UUID createdBy) {

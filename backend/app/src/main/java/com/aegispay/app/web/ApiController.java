@@ -10,6 +10,7 @@ import com.aegispay.app.payroll.PayPeriodRepository;
 import com.aegispay.app.payroll.PayRun;
 import com.aegispay.app.payroll.PayrollRunService;
 import com.aegispay.app.platform.tenancy.TenantContext;
+import com.aegispay.app.rules.RulePackResolver;
 import com.aegispay.app.time.Punch;
 import com.aegispay.app.time.PunchImportService;
 import com.aegispay.app.time.PunchRepository;
@@ -132,8 +133,14 @@ public class ApiController {
 
     @PostMapping("/pay-periods/{periodId}/runs")
     @PreAuthorize("hasAnyAuthority('PAYROLL_APPROVE','MANAGE_ORG')")
-    public PayrollRunService.PayrollView calculate(@PathVariable UUID periodId) {
-        PayRun run = payrollRunService.calculate(periodId);
+    public PayrollRunService.PayrollView calculate(
+            @PathVariable UUID periodId,
+            @RequestParam(defaultValue = "HISTORICAL") String law
+    ) {
+        RulePackResolver.LawMode mode = "CURRENT_LAW".equalsIgnoreCase(law)
+                ? RulePackResolver.LawMode.CURRENT_LAW
+                : RulePackResolver.LawMode.HISTORICAL;
+        PayRun run = payrollRunService.calculate(periodId, mode);
         return payrollRunService.view(run.getId());
     }
 

@@ -13,7 +13,8 @@ import com.aegispay.app.org.Person;
 import com.aegispay.app.org.PersonRepository;
 import com.aegispay.app.org.TenantPolicyEntity;
 import com.aegispay.app.org.TenantPolicyRepository;
-import com.aegispay.app.platform.tenancy.TenantContext;
+import com.aegispay.app.platform.audit.AuditRecorder;
+import com.aegispay.app.rules.RulePackResolver;
 import com.aegispay.app.time.MealAttestation;
 import com.aegispay.app.time.MealAttestationRepository;
 import com.aegispay.app.time.Punch;
@@ -28,7 +29,6 @@ import com.aegispay.engine.model.WorkPeriod.Attestation.MealAnswer;
 import com.aegispay.engine.model.WorkPeriod.ExemptionStatus;
 import com.aegispay.engine.money.Money;
 import com.aegispay.engine.result.EarningsResult;
-import com.aegispay.engine.rules.PublishedRulePack;
 import com.aegispay.engine.rules.RulePack;
 import com.aegispay.engine.time.PunchPairer;
 import com.aegispay.engine.time.PunchPairer.PunchKind;
@@ -75,6 +75,8 @@ public class PayrollRunService {
     private final TenantPolicyRepository policies;
     private final PayRunSnapshotRepository snapshots;
     private final EntitlementService entitlements;
+    private final RulePackResolver rulePacks;
+    private final AuditRecorder audit;
 
     public PayrollRunService(
             PayPeriodRepository periods,
@@ -92,7 +94,9 @@ public class PayrollRunService {
             BonusEntryRepository bonuses,
             TenantPolicyRepository policies,
             PayRunSnapshotRepository snapshots,
-            EntitlementService entitlements
+            EntitlementService entitlements,
+            RulePackResolver rulePacks,
+            AuditRecorder audit
     ) {
         this.periods = periods;
         this.runs = runs;
@@ -110,26 +114,35 @@ public class PayrollRunService {
         this.policies = policies;
         this.snapshots = snapshots;
         this.entitlements = entitlements;
+        this.rulePacks = rulePacks;
+        this.audit = audit;
     }
 
     @Transactional
     public PayRun calculate(UUID periodId) {
+        return calculate(periodId, RulePackResolver.LawMode.HISTORICAL);
+    }
+
+    @Transactional
+    public PayRun calculate(UUID periodId, RulePackResolver.LawMode lawMode) {
         entitlements.assertWritable();
         UUID tenantId = TenantContext.requireTenantId();
         PayPeriod period = periods.findById(periodId).orElseThrow();
         TenantPolicyEntity policy = policies.findById(tenantId).orElseGet(TenantPolicyEntity::new);
+        RulePackResolver.Resolved resolved = rulePacks.resolve(period.getEndDate(), lawMode);
 
         PayRun run = new PayRun();
         run.setPayPeriodId(period.getId());
         run.setStatus("CALCULATED");
         run.setEngineVersion(EngineVersion.VALUE);
-        run.setRulePackVersions(List.of("US-FLSA@2024.1", "US-CA@2024.1"));
+        run.setRulePackVersions(resolved.labels());
+        run.setRulePackIds(resolved.ids());
         run.setCreatedBy(TenantContext.userId());
         runs.save(run);
 
         Instant from = period.getStartDate().atStartOfDay().toInstant(ZoneOffset.UTC);
         Instant to = period.getEndDate().plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
-        List<RulePack> packs = List.of(PublishedRulePack.flsa(), PublishedRulePack.california());
+        List<RulePack> packs = resolved.engine();
         EngineOptions options = EngineOptions.fromPacks(packs);
         GustoCsvExporter.Holder csvParts = new GustoCsvExporter.Holder();
         Map<String, String> regularRates = new LinkedHashMap<>();
@@ -274,6 +287,7 @@ public class PayrollRunService {
         run.setStatus("APPROVED");
         run.setApprovedBy(TenantContext.userId());
         run.setApprovedAt(Instant.now());
+        audit.record("PAYROLL_APPROVE", "pay_run", runId.toString());
         return run;
     }
 
@@ -352,7 +366,8 @@ public class PayrollRunService {
     private void persistSnapshot(PayRun run, Map<String, String> regularRates, Map<String, String> grossByPerson) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("engineVersion", EngineVersion.VALUE);
-        payload.put("rulePacks", List.of("US-FLSA@2024.1", "US-CA@2024.1"));
+        payload.put("rulePacks", run.getRulePackVersions());
+        payload.put("rulePackIds", run.getRulePackIds());
         payload.put("regularRates", regularRates);
         payload.put("grossByPerson", grossByPerson);
         payload.put("createdAt", Instant.now().toString());

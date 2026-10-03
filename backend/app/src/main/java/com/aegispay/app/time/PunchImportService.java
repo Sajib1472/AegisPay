@@ -2,7 +2,11 @@ package com.aegispay.app.time;
 
 import com.aegispay.app.org.Person;
 import com.aegispay.app.org.PersonRepository;
+import com.aegispay.app.org.TenantPolicyEntity;
+import com.aegispay.app.org.TenantPolicyRepository;
+import com.aegispay.app.platform.ArchitectureFreeze;
 import com.aegispay.app.platform.tenancy.TenantContext;
+import com.aegispay.engine.time.PunchClock;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,15 +31,18 @@ public class PunchImportService {
     private final PunchRepository punches;
     private final PunchImportBatchRepository batches;
     private final PersonRepository people;
+    private final TenantPolicyRepository policies;
 
     public PunchImportService(
             PunchRepository punches,
             PunchImportBatchRepository batches,
-            PersonRepository people
+            PersonRepository people,
+            TenantPolicyRepository policies
     ) {
         this.punches = punches;
         this.batches = batches;
         this.people = people;
+        this.policies = policies;
     }
 
     @Transactional
@@ -74,6 +81,11 @@ public class PunchImportService {
                 continue;
             }
             Instant at = parseTimestamp(cols[1].trim(), zone);
+            TenantPolicyEntity policy = policies.findById(tenantId).orElse(null);
+            int round = policy == null || policy.getPunchRoundMinutes() <= 0
+                    ? ArchitectureFreeze.DEFAULT_PUNCH_ROUND_MINUTES
+                    : policy.getPunchRoundMinutes();
+            Instant adjusted = PunchClock.round(at, round);
             Punch punch = new Punch();
             punch.setPersonId(person.getId());
             punch.setLocationId(locationId);
@@ -81,7 +93,7 @@ public class PunchImportService {
             punch.setPunchType(cols[2].trim().toUpperCase(Locale.ROOT));
             punch.setSource("CSV");
             punch.setOriginalAt(at);
-            punch.setAdjustedAt(at);
+            punch.setAdjustedAt(adjusted);
             punches.save(punch);
             count++;
         }

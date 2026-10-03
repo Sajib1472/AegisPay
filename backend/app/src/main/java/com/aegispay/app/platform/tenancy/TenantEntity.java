@@ -10,6 +10,10 @@ import org.hibernate.annotations.ParamDef;
 
 import java.util.UUID;
 
+/**
+ * Shared database, shared schema, discriminator isolation.
+ * Every business row has tenant_id. Never skip it for a "debug query".
+ */
 @MappedSuperclass
 @FilterDef(name = "tenantFilter", parameters = @ParamDef(name = "tenantId", type = UUID.class))
 @Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")

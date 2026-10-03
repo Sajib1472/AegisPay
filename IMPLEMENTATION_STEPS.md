@@ -166,7 +166,7 @@ A payroll run is successful when:
 
 ## 3. Step 3 — Architecture decisions you must freeze now
 
-Changing these later is expensive. Freeze them.
+Changing these later is expensive. Freeze them in `ArchitectureFreeze`, ArchUnit tests, `RulePackResolver`, and `TenantIsolationIT`. Shared schema + `tenant_id`, modular monolith packages (`platform`, `org`, `time`, `rules`, `payroll`, `billing`), pure-Java engine, `NUMERIC(12,4)` money, versioned rule packs, handwritten mappers, Java 21 / Boot 3.3 / Postgres 16 / Redis 7.
 
 ### 3.1 Multi-tenancy model
 
