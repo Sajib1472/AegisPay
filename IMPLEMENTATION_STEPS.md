@@ -984,6 +984,8 @@ Rule-pack updates are a retention feature. Email tenants when the law changes. T
 
 ## 19. Step 19 — Implementation sequence (calendar for a solo Java developer)
 
+Tracked in `docs/CALENDAR.md`. The codebase already follows this order; do not skip the engine tests for a prettier dashboard.
+
 This is the order of work. Do not skip ahead to a pretty dashboard.
 
 ### Weeks 1–2 — Foundation
