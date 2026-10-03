@@ -28,8 +28,11 @@ public class AuthController {
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
     public AuthService.AuthResponse signup(@Valid @RequestBody SignupBody body) {
+        if (!Boolean.TRUE.equals(body.tosAccepted())) {
+            throw new IllegalArgumentException("Accept the Terms of Service to create a clinic group");
+        }
         return authService.signup(new AuthService.SignupRequest(
-                body.legalName(), body.vertical(), body.displayName(), body.email(), body.password()
+                body.legalName(), body.vertical(), body.displayName(), body.email(), body.password(), body.tosAccepted()
         ));
     }
 
@@ -69,7 +72,8 @@ public class AuthController {
             String vertical,
             @NotBlank String displayName,
             @Email String email,
-            @NotBlank String password
+            @NotBlank String password,
+            Boolean tosAccepted
     ) {
     }
 

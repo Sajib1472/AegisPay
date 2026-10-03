@@ -927,6 +927,8 @@ If you cannot replay a pay run from snapshot, you are not ready for a paying CA 
 
 ## 18. Step 18 — Make it sellable: packaging, not more features
 
+Marketing one-pager: `marketing/index.html`. Shadow CSV diff: `ShadowCsvDiff`. Clickwrap TOS on signup. Legal outlines in `legal/`.
+
 ### 18.1 Marketing site (one page is enough)
 
 Sections:

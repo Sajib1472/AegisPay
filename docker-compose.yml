@@ -38,26 +38,3 @@ services:
 
 volumes:
   aegispay_pg:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: aegispay
-      POSTGRES_USER: aegispay
-      POSTGRES_PASSWORD: aegispay
-    ports:
-      - "5432:5432"
-    volumes:
-      - aegispay_pg:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aegispay -d aegispay"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-
-volumes:
-  aegispay_pg:

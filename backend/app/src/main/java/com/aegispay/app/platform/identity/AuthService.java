@@ -56,6 +56,9 @@ public class AuthService {
 
     @Transactional
     public AuthResponse signup(SignupRequest request) {
+        if (!request.tosAccepted()) {
+            throw new IllegalArgumentException("Accept the Terms of Service and disclaimer to create a group");
+        }
         String slug = slugify(request.legalName());
         if (tenants.findBySlug(slug).isPresent()) {
             throw new IllegalArgumentException("A clinic group with that name already exists");
@@ -238,7 +241,7 @@ public class AuthService {
         return name.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
     }
 
-    public record SignupRequest(String legalName, String vertical, String displayName, String email, String password) {
+    public record SignupRequest(String legalName, String vertical, String displayName, String email, String password, boolean tosAccepted) {
     }
 
     public record LoginRequest(String email, String password) {

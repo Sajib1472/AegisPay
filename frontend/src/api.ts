@@ -209,7 +209,7 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     }),
-  signup: (body: { legalName: string; displayName: string; email: string; password: string; vertical: string }) =>
+  signup: (body: { legalName: string; displayName: string; email: string; password: string; vertical: string; tosAccepted?: boolean }) =>
     request<AuthResponse>("/api/v1/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

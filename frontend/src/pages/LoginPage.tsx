@@ -8,6 +8,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("HarborDental!demo");
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [tos, setTos] = useState(false);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -21,7 +22,8 @@ export default function LoginPage() {
               displayName: "Owner",
               email,
               password,
-              vertical: "DENTAL"
+              vertical: "DENTAL",
+              tosAccepted: tos
             });
       setSession(auth);
       navigate("/");
@@ -48,8 +50,14 @@ export default function LoginPage() {
             autoComplete="current-password"
           />
         </label>
+        {mode === "signup" ? (
+          <label>
+            <input type="checkbox" checked={tos} onChange={(e) => setTos(e.target.checked)} /> I agree to the Terms,
+            privacy policy, and that this is calculation assistance — not legal advice. I remain the employer of record.
+          </label>
+        ) : null}
         {error ? <p className="error">{error}</p> : null}
-        <button className="primary" type="submit">
+        <button className="primary" type="submit" disabled={mode === "signup" && !tos}>
           {mode === "login" ? "Sign in" : "Create clinic group"}
         </button>
       </form>

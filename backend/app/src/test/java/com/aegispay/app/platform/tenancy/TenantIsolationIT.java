@@ -101,7 +101,7 @@ class TenantIsolationIT {
 
     private String signup(String clinic, String email) throws Exception {
         String body = """
-                {"legalName":"%s","vertical":"DENTAL","displayName":"Owner","email":"%s","password":"Password!23"}
+                {"legalName":"%s","vertical":"DENTAL","displayName":"Owner","email":"%s","password":"Password!23","tosAccepted":true}
                 """.formatted(clinic, email);
         String json = mvc.perform(post("/api/v1/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
