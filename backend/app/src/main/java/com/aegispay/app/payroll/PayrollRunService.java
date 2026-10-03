@@ -1,6 +1,7 @@
 package com.aegispay.app.payroll;
 
 import com.aegispay.app.billing.EntitlementService;
+import com.aegispay.app.leave.LeaveAccrualService;
 import com.aegispay.app.org.Assignment;
 import com.aegispay.app.org.AssignmentRepository;
 import com.aegispay.app.org.JobCode;
@@ -88,6 +89,7 @@ public class PayrollRunService {
     private final RulePackResolver rulePacks;
     private final AuditRecorder audit;
     private final AuthService auth;
+    private final LeaveAccrualService leave;
 
     public PayrollRunService(
             PayPeriodRepository periods,
@@ -109,7 +111,8 @@ public class PayrollRunService {
             EntitlementService entitlements,
             RulePackResolver rulePacks,
             AuditRecorder audit,
-            AuthService auth
+            AuthService auth,
+            LeaveAccrualService leave
     ) {
         this.periods = periods;
         this.runs = runs;
@@ -131,6 +134,7 @@ public class PayrollRunService {
         this.rulePacks = rulePacks;
         this.audit = audit;
         this.auth = auth;
+        this.leave = leave;
     }
 
     @Transactional
@@ -281,6 +285,7 @@ public class PayrollRunService {
 
             EarningsResult result = engine.calculate(workPeriod, packs, options);
             persistResult(run, person, result);
+            leave.accrueFromRun(run.getId(), person, loc, result, period.getEndDate());
             addWarnings(run, period, person, result, bonusList.isEmpty());
             csvParts.append(exporter.export(person.getExternalEmployeeCode(), result));
             genericParts.append(exporter.generic(person.getExternalEmployeeCode(), result));

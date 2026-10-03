@@ -722,6 +722,8 @@ Store the PDF bytes and the snapshot JSON in object storage (S3/R2). The pay_run
 
 ## 12. Step 12 — Leave accrual (phase after first paid customer, unless they require it)
 
+CA sick leave is a pay-run post-step (`LeaveAccrualCalculator` 1 hour / 30 worked, city overlay cap). Ledger + cached balance. Not a PTO product.
+
 If the first customer is in CA, you will be asked about sick leave.
 
 Minimum viable:

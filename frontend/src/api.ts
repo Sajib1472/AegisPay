@@ -257,6 +257,7 @@ export const api = {
       `/api/v1/wizard/jurisdictions?city=${encodeURIComponent(city)}&region=${encodeURIComponent(region)}`
     ),
   catalog: () => request<{ plans: { code: string; name: string; who: string; monthlyCents: number; maxLocations: number; maxEmployees: number; support: string; auditPackCents: number }[]; noFreeForeverPlan: string; positioning: string[] }>("/api/v1/catalog"),
+  leaveBalances: () => request<{ personId: string; policyCode: string; hours: number; asOf: string }[]>("/api/v1/leave/balances"),
   generateAuditPack: (runId: string) =>
     request<{ sha256: string; bytes: number; fileName: string }>(`/api/v1/pay-runs/${runId}/audit-pack`, { method: "POST" }),
   downloadAuditPack: async (runId: string) => {
