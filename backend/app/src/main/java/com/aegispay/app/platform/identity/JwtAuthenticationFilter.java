@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,11 +37,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String requestId = Optional.ofNullable(request.getHeader("X-Request-Id"))
                         .orElse(UUID.randomUUID().toString());
                 TenantContext.set(claims.tenantId(), claims.userId(), claims.role(), requestId);
-                var auth = new UsernamePasswordAuthenticationToken(
-                        claims,
-                        null,
-                        List.of(new SimpleGrantedAuthority("ROLE_" + claims.role()))
-                );
+                List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + claims.role()));
+                for (String perm : claims.permissions()) {
+                    authorities.add(new SimpleGrantedAuthority(perm));
+                }
+                var auth = new UsernamePasswordAuthenticationToken(claims, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (IllegalArgumentException ignored) {
                 SecurityContextHolder.clearContext();

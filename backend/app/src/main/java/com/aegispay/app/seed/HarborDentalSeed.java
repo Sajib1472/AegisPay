@@ -110,6 +110,7 @@ public class HarborDentalSeed implements CommandLineRunner {
         tenant.setStatus("ACTIVE");
         tenant.setPlan("GROUP");
         tenant.setVertical("DENTAL");
+        tenant.setAuditPackEnabled(true);
         tenants.save(tenant);
 
         TenantContext.set(tenant.getId(), null, UserRole.OWNER.name(), "seed");

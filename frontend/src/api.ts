@@ -10,6 +10,8 @@ export type AuthResponse = {
   role: string;
   plan: string;
   vertical: string;
+  trialEndsAt?: string | null;
+  permissions: string[];
 };
 
 export type Location = {
@@ -50,6 +52,9 @@ export type PayrollView = {
   periodId: string;
   status: string;
   engineVersion: string;
+  approvedBy?: string | null;
+  approvedAt?: string | null;
+  regularRates: Record<string, string>;
   lines: {
     personId: string;
     workDate: string;
@@ -68,6 +73,41 @@ export type PayrollView = {
     message: string;
   }[];
   gustoCsv: string;
+  snapshotSha256?: string;
+  success: {
+    punchesAccounted: boolean;
+    everyEmployeeHasALine: boolean;
+    regularRateShown: boolean;
+    approvedByPayrollApprove: boolean;
+    snapshotStored: boolean;
+    gustoExportReady: boolean;
+    pairingProblemsFlagged: boolean;
+  };
+};
+
+export type AccountView = {
+  tenantName: string;
+  plan: string;
+  status: string;
+  trialEndsAt?: string | null;
+  auditPack: boolean;
+  locationCount: number;
+  employeeCount: number;
+  periodCount: number;
+  maxLocations: number;
+  maxEmployees: number;
+  maxPayPeriods: number | null;
+  rulePacks: string[];
+  secondStatePack: boolean;
+  writable: boolean;
+  permissions: string[];
+  catalog: {
+    name: string;
+    monthlyCents: number;
+    who: string;
+    support: string;
+  };
+  positioning: string[];
 };
 
 export function getToken() {
@@ -146,5 +186,7 @@ export const api = {
   calculate: (periodId: string) =>
     request<PayrollView>(`/api/v1/pay-periods/${periodId}/runs`, { method: "POST" }),
   approve: (runId: string) =>
-    request<PayrollView>(`/api/v1/pay-runs/${runId}/approve`, { method: "POST" })
+    request<PayrollView>(`/api/v1/pay-runs/${runId}/approve`, { method: "POST" }),
+  account: () => request<AccountView>("/api/v1/account"),
+  catalog: () => request<{ plans: { code: string; name: string; who: string; monthlyCents: number; maxLocations: number; maxEmployees: number; support: string; auditPackCents: number }[]; noFreeForeverPlan: string; positioning: string[] }>("/api/v1/catalog")
 };

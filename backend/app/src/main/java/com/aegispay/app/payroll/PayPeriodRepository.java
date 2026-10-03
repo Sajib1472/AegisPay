@@ -7,4 +7,6 @@ import java.util.UUID;
 
 public interface PayPeriodRepository extends JpaRepository<PayPeriod, UUID> {
     List<PayPeriod> findByTenantIdOrderByStartDateDesc(UUID tenantId);
+
+    long countByTenantId(UUID tenantId);
 }

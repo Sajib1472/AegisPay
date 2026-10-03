@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -39,12 +40,14 @@ public class JwtService {
     public String issueAccessToken(AppUser user) {
         try {
             Instant now = Instant.now();
+            List<String> perms = Permission.forRole(user.getRole()).stream().map(Enum::name).toList();
             JWTClaimsSet claims = new JWTClaimsSet.Builder()
                     .issuer(issuer)
                     .subject(user.getId().toString())
                     .claim("tid", user.getTenantId().toString())
                     .claim("role", user.getRole().name())
                     .claim("email", user.getEmail())
+                    .claim("perms", perms)
                     .issueTime(Date.from(now))
                     .expirationTime(Date.from(now.plusSeconds(accessMinutes * 60L)))
                     .jwtID(UUID.randomUUID().toString())
@@ -67,17 +70,19 @@ public class JwtService {
             if (claims.getExpirationTime().toInstant().isBefore(Instant.now())) {
                 throw new IllegalArgumentException("Token expired");
             }
+            List<String> perms = claims.getStringListClaim("perms");
             return new Claims(
                     UUID.fromString(claims.getSubject()),
                     UUID.fromString(claims.getStringClaim("tid")),
                     claims.getStringClaim("role"),
-                    claims.getStringClaim("email")
+                    claims.getStringClaim("email"),
+                    perms == null ? List.of() : perms
             );
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid token", e);
         }
     }
 
-    public record Claims(UUID userId, UUID tenantId, String role, String email) {
+    public record Claims(UUID userId, UUID tenantId, String role, String email, List<String> permissions) {
     }
 }

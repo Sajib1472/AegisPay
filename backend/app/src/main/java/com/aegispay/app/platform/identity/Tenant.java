@@ -29,6 +29,12 @@ public class Tenant {
     @Column(nullable = false)
     private String vertical;
 
+    @Column(name = "trial_ends_at")
+    private Instant trialEndsAt;
+
+    @Column(name = "audit_pack_enabled", nullable = false)
+    private boolean auditPackEnabled;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -88,5 +94,21 @@ public class Tenant {
 
     public void setVertical(String vertical) {
         this.vertical = vertical;
+    }
+
+    public Instant getTrialEndsAt() {
+        return trialEndsAt;
+    }
+
+    public void setTrialEndsAt(Instant trialEndsAt) {
+        this.trialEndsAt = trialEndsAt;
+    }
+
+    public boolean isAuditPackEnabled() {
+        return auditPackEnabled;
+    }
+
+    public void setAuditPackEnabled(boolean auditPackEnabled) {
+        this.auditPackEnabled = auditPackEnabled;
     }
 }

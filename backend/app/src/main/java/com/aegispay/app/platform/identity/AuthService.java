@@ -7,6 +7,9 @@ import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -42,9 +45,10 @@ public class AuthService {
         Tenant tenant = new Tenant();
         tenant.setLegalName(request.legalName());
         tenant.setSlug(slug);
-        tenant.setStatus("ACTIVE");
-        tenant.setPlan("GROUP");
+        tenant.setStatus("TRIAL");
+        tenant.setPlan("PILOT");
         tenant.setVertical(request.vertical() == null ? "DENTAL" : request.vertical());
+        tenant.setTrialEndsAt(Instant.now().plus(14, ChronoUnit.DAYS));
         tenants.save(tenant);
 
         TenantContext.set(tenant.getId(), null, UserRole.OWNER.name(), UUID.randomUUID().toString());
@@ -91,7 +95,9 @@ public class AuthService {
                 user.getEmail(),
                 user.getRole().name(),
                 tenant.getPlan(),
-                tenant.getVertical()
+                tenant.getVertical(),
+                tenant.getTrialEndsAt(),
+                Permission.forRole(user.getRole()).stream().map(Enum::name).toList()
         );
     }
 
@@ -114,7 +120,9 @@ public class AuthService {
             String email,
             String role,
             String plan,
-            String vertical
+            String vertical,
+            Instant trialEndsAt,
+            List<String> permissions
     ) {
     }
 }

@@ -38,6 +38,9 @@ public class PayRun extends TenantEntity {
     @Column(name = "approved_at")
     private Instant approvedAt;
 
+    @Column(name = "snapshot_sha256")
+    private String snapshotSha256;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -91,5 +94,13 @@ public class PayRun extends TenantEntity {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public String getSnapshotSha256() {
+        return snapshotSha256;
+    }
+
+    public void setSnapshotSha256(String snapshotSha256) {
+        this.snapshotSha256 = snapshotSha256;
     }
 }

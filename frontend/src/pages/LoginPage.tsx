@@ -59,8 +59,8 @@ export default function LoginPage() {
         </button>
       </p>
       <p className="disclaimer">
-        Demo seed (local profile): owner@harbordental.example / HarborDental!demo. Calculation assistance only — not
-        legal advice. You remain the employer of record.
+        Demo seed (local profile): owner@harbordental.example / HarborDental!demo on the Group plan. New signups start
+        on a 14-day Pilot. Calculation assistance only — not legal advice. You remain the employer of record.
       </p>
     </div>
   );

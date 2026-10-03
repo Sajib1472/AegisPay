@@ -122,6 +122,8 @@ Proceed to Step 2 only if all are true:
 
 ## 2. Step 2 — Lock the commercial product, not the architecture
 
+Catalog, limits, `PAYROLL_APPROVE`, and the payroll-success checklist are encoded in `com.aegispay.app.billing` (`PlanCatalog`, `EntitlementService`, `Permission`). New signups start on **Pilot** (14 days, 1 location, 2 periods). Harbor Dental seed is **Group**. There is no free-forever plan.
+
 ### 2.1 Packages you will sell
 
 | Plan | Who | Price | Limits |

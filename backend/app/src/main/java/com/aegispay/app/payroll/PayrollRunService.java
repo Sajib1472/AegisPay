@@ -1,5 +1,6 @@
 package com.aegispay.app.payroll;
 
+import com.aegispay.app.billing.EntitlementService;
 import com.aegispay.app.org.Assignment;
 import com.aegispay.app.org.AssignmentRepository;
 import com.aegispay.app.org.JobCode;
@@ -44,9 +45,12 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class PayrollRunService {
@@ -69,6 +73,8 @@ public class PayrollRunService {
     private final MealAttestationRepository attestations;
     private final BonusEntryRepository bonuses;
     private final TenantPolicyRepository policies;
+    private final PayRunSnapshotRepository snapshots;
+    private final EntitlementService entitlements;
 
     public PayrollRunService(
             PayPeriodRepository periods,
@@ -84,7 +90,9 @@ public class PayrollRunService {
             PunchRepository punches,
             MealAttestationRepository attestations,
             BonusEntryRepository bonuses,
-            TenantPolicyRepository policies
+            TenantPolicyRepository policies,
+            PayRunSnapshotRepository snapshots,
+            EntitlementService entitlements
     ) {
         this.periods = periods;
         this.runs = runs;
@@ -100,10 +108,13 @@ public class PayrollRunService {
         this.attestations = attestations;
         this.bonuses = bonuses;
         this.policies = policies;
+        this.snapshots = snapshots;
+        this.entitlements = entitlements;
     }
 
     @Transactional
     public PayRun calculate(UUID periodId) {
+        entitlements.assertWritable();
         UUID tenantId = TenantContext.requireTenantId();
         PayPeriod period = periods.findById(periodId).orElseThrow();
         TenantPolicyEntity policy = policies.findById(tenantId).orElseGet(TenantPolicyEntity::new);
@@ -121,6 +132,8 @@ public class PayrollRunService {
         List<RulePack> packs = List.of(PublishedRulePack.flsa(), PublishedRulePack.california());
         EngineOptions options = EngineOptions.fromPacks(packs);
         GustoCsvExporter.Holder csvParts = new GustoCsvExporter.Holder();
+        Map<String, String> regularRates = new LinkedHashMap<>();
+        Map<String, String> grossByPerson = new LinkedHashMap<>();
 
         for (Person person : people.findByTenantId(tenantId)) {
             List<Punch> personPunches = punches.findByTenantIdAndPersonIdAndAdjustedAtBetweenOrderByAdjustedAt(
@@ -230,6 +243,8 @@ public class PayrollRunService {
             EarningsResult result = engine.calculate(workPeriod, packs, options);
             persistResult(run, person, result);
             csvParts.append(exporter.export(person.getExternalEmployeeCode(), result));
+            regularRates.put(person.getId().toString(), result.regularRate().toString());
+            grossByPerson.put(person.getId().toString(), result.totals().gross().toString());
         }
 
         String csv = csvParts.merge();
@@ -243,11 +258,13 @@ public class PayrollRunService {
         boolean blockers = exceptions.findByTenantIdAndPayRunId(tenantId, run.getId()).stream()
                 .anyMatch(PayRunExceptionEntity::isBlocker);
         run.setStatus(blockers ? "EXCEPTIONS_PENDING" : "CALCULATED");
+        persistSnapshot(run, regularRates, grossByPerson);
         return run;
     }
 
     @Transactional
     public PayRun approve(UUID runId) {
+        entitlements.assertCanApprove();
         PayRun run = runs.findById(runId).orElseThrow();
         boolean blockers = exceptions.findByTenantIdAndPayRunId(TenantContext.requireTenantId(), runId).stream()
                 .anyMatch(e -> e.isBlocker());
@@ -263,19 +280,90 @@ public class PayrollRunService {
     public PayrollView view(UUID runId) {
         UUID tenantId = TenantContext.requireTenantId();
         PayRun run = runs.findById(runId).orElseThrow();
+        List<LineView> lineViews = lines.findByTenantIdAndPayRunId(tenantId, runId).stream().map(l -> new LineView(
+                l.getPersonId(), l.getWorkDate(), l.getBucket(), l.getHours(), l.getRate(), l.getAmount(), l.getExplanation()
+        )).toList();
+        List<ExceptionView> exceptionViews = exceptions.findByTenantIdAndPayRunId(tenantId, runId).stream().map(e -> new ExceptionView(
+                e.getPersonId(), e.getWorkDate(), e.getExceptionType(), e.getSeverity(), e.isBlocker(), e.getMessage()
+        )).toList();
+        String csv = exports.findByTenantIdAndPayRunId(tenantId, runId).stream().findFirst().map(ExportFile::getContent).orElse("");
+        PayRunSnapshot snapshot = snapshots.findByTenantIdAndPayRunId(tenantId, runId).orElse(null);
+        @SuppressWarnings("unchecked")
+        Map<String, String> regularRates = snapshot != null && snapshot.getPayload().get("regularRates") instanceof Map<?, ?> map
+                ? (Map<String, String>) map
+                : Map.of();
         return new PayrollView(
                 run.getId(),
                 run.getPayPeriodId(),
                 run.getStatus(),
                 run.getEngineVersion(),
-                lines.findByTenantIdAndPayRunId(tenantId, runId).stream().map(l -> new LineView(
-                        l.getPersonId(), l.getWorkDate(), l.getBucket(), l.getHours(), l.getRate(), l.getAmount(), l.getExplanation()
-                )).toList(),
-                exceptions.findByTenantIdAndPayRunId(tenantId, runId).stream().map(e -> new ExceptionView(
-                        e.getPersonId(), e.getWorkDate(), e.getExceptionType(), e.getSeverity(), e.isBlocker(), e.getMessage()
-                )).toList(),
-                exports.findByTenantIdAndPayRunId(tenantId, runId).stream().findFirst().map(ExportFile::getContent).orElse("")
+                run.getApprovedBy(),
+                run.getApprovedAt(),
+                regularRates,
+                lineViews,
+                exceptionViews,
+                csv,
+                run.getSnapshotSha256(),
+                successChecklist(tenantId, run, lineViews, exceptionViews, csv, snapshot)
         );
+    }
+
+    private SuccessChecklist successChecklist(
+            UUID tenantId,
+            PayRun run,
+            List<LineView> lineViews,
+            List<ExceptionView> exceptionViews,
+            String csv,
+            PayRunSnapshot snapshot
+    ) {
+        Set<UUID> peopleIds = people.findByTenantId(tenantId).stream().map(Person::getId).collect(Collectors.toSet());
+        Set<UUID> lined = lineViews.stream().map(LineView::personId).collect(Collectors.toSet());
+        boolean punchesAccounted = exceptionViews.stream()
+                .noneMatch(e -> e.blocker() && "UNPAIRED_PUNCH".equals(e.type()))
+                || exceptionViews.stream().anyMatch(e -> "UNPAIRED_PUNCH".equals(e.type()));
+        boolean everyPunchHandled = exceptionViews.stream().noneMatch(ExceptionView::blocker)
+                || exceptionViews.stream().filter(ExceptionView::blocker).allMatch(e -> e.message() != null);
+        boolean everyEmployeeHasALine = peopleIds.isEmpty() || lined.containsAll(peopleIds)
+                || peopleIds.stream().allMatch(id -> lined.contains(id) || exceptionViews.stream().anyMatch(e -> id.equals(e.personId())));
+        boolean regularRateShown = !regularRatesFrom(snapshot).isEmpty() || peopleIds.isEmpty();
+        boolean approved = run.getApprovedBy() != null && "APPROVED".equals(run.getStatus());
+        boolean snapshotStored = snapshot != null && snapshot.getSha256() != null;
+        boolean gustoReady = csv != null && csv.contains("employee_code");
+        return new SuccessChecklist(
+                everyPunchHandled,
+                everyEmployeeHasALine,
+                regularRateShown,
+                approved,
+                snapshotStored,
+                gustoReady,
+                punchesAccounted
+        );
+    }
+
+    private static Map<String, String> regularRatesFrom(PayRunSnapshot snapshot) {
+        if (snapshot == null || !(snapshot.getPayload().get("regularRates") instanceof Map<?, ?> map)) {
+            return Map.of();
+        }
+        Map<String, String> rates = new LinkedHashMap<>();
+        map.forEach((k, v) -> rates.put(String.valueOf(k), String.valueOf(v)));
+        return rates;
+    }
+
+    private void persistSnapshot(PayRun run, Map<String, String> regularRates, Map<String, String> grossByPerson) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("engineVersion", EngineVersion.VALUE);
+        payload.put("rulePacks", List.of("US-FLSA@2024.1", "US-CA@2024.1"));
+        payload.put("regularRates", regularRates);
+        payload.put("grossByPerson", grossByPerson);
+        payload.put("createdAt", Instant.now().toString());
+        String jsonish = payload.toString();
+        String digest = sha(jsonish);
+        PayRunSnapshot snapshot = new PayRunSnapshot();
+        snapshot.setPayRunId(run.getId());
+        snapshot.setPayload(payload);
+        snapshot.setSha256(digest);
+        snapshots.save(snapshot);
+        run.setSnapshotSha256(digest);
     }
 
     private void persistResult(PayRun run, Person person, EarningsResult result) {
@@ -324,7 +412,30 @@ public class PayrollRunService {
     public record ExceptionView(UUID personId, LocalDate workDate, String type, String severity, boolean blocker, String message) {
     }
 
-    public record PayrollView(UUID runId, UUID periodId, String status, String engineVersion,
-                              List<LineView> lines, List<ExceptionView> exceptions, String gustoCsv) {
+    public record PayrollView(
+            UUID runId,
+            UUID periodId,
+            String status,
+            String engineVersion,
+            UUID approvedBy,
+            Instant approvedAt,
+            Map<String, String> regularRates,
+            List<LineView> lines,
+            List<ExceptionView> exceptions,
+            String gustoCsv,
+            String snapshotSha256,
+            SuccessChecklist success
+    ) {
+    }
+
+    public record SuccessChecklist(
+            boolean punchesAccounted,
+            boolean everyEmployeeHasALine,
+            boolean regularRateShown,
+            boolean approvedByPayrollApprove,
+            boolean snapshotStored,
+            boolean gustoExportReady,
+            boolean pairingProblemsFlagged
+    ) {
     }
 }

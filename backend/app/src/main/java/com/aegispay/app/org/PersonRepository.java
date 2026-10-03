@@ -10,4 +10,6 @@ public interface PersonRepository extends JpaRepository<Person, UUID> {
     List<Person> findByTenantId(UUID tenantId);
 
     Optional<Person> findByTenantIdAndExternalEmployeeCode(UUID tenantId, String code);
+
+    long countByTenantId(UUID tenantId);
 }

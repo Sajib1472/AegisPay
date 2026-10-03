@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { api, type PayPeriod, type PayrollView } from "../api";
+import { api, getSession, type PayPeriod, type PayrollView } from "../api";
 
 export default function PayrollPage() {
+  const canApprove = (getSession()?.permissions || []).includes("PAYROLL_APPROVE");
   const [periods, setPeriods] = useState<PayPeriod[]>([]);
   const [startDate, setStartDate] = useState("2024-06-03");
   const [endDate, setEndDate] = useState("2024-06-09");
@@ -75,12 +76,33 @@ export default function PayrollPage() {
         <div className="card">
           <h3>
             Register · {view.status}
-            {view.status !== "APPROVED" ? (
+            {view.status !== "APPROVED" && canApprove ? (
               <button className="primary" style={{ marginLeft: 12 }} onClick={approve}>
                 Approve and lock
               </button>
             ) : null}
           </h3>
+          <p>
+            Regular rates (shown, including bonus true-up):{" "}
+            {Object.values(view.regularRates || {}).join(", ") || "—"}
+          </p>
+          {view.success ? (
+            <p>
+              Success checklist:{" "}
+              {[
+                ["Punches handled", view.success.punchesAccounted],
+                ["Every employee has a line", view.success.everyEmployeeHasALine],
+                ["Regular rate shown", view.success.regularRateShown],
+                ["PAYROLL_APPROVE signed off", view.success.approvedByPayrollApprove],
+                ["Snapshot stored", view.success.snapshotStored],
+                ["Gusto file ready", view.success.gustoExportReady]
+              ].map(([label, ok]) => (
+                <span key={String(label)} className={`badge ${ok ? "ok" : "warn"}`} style={{ marginRight: 6 }}>
+                  {label}
+                </span>
+              ))}
+            </p>
+          ) : null}
           <table>
             <thead>
               <tr>

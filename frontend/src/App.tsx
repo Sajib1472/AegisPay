@@ -22,9 +22,10 @@ function Shell() {
           {session.tenantName}
           <br />
           {session.displayName} · {session.role}
+          {session.permissions?.includes("PAYROLL_APPROVE") ? " · can approve" : ""}
         </p>
         <NavLink to="/" end>
-          Risk home
+          {session.role === "OWNER" ? "Risk home" : "Home"}
         </NavLink>
         <NavLink to="/queue">Exception queue</NavLink>
         <NavLink to="/time">Time & imports</NavLink>
