@@ -1,9 +1,11 @@
 package com.aegispay.engine;
 
 import com.aegispay.engine.calc.CaliforniaRules;
+import com.aegispay.engine.calc.DifferentialEvaluator;
 import com.aegispay.engine.calc.FlsaOvertimeCalculator;
 import com.aegispay.engine.calc.FlsaOvertimeCalculator.WeekBuckets;
 import com.aegispay.engine.calc.RegularRateCalculator;
+import com.aegispay.engine.calc.SplitShiftAndReporting;
 import com.aegispay.engine.calc.WorkedTime;
 import com.aegispay.engine.calc.WorkedTime.DayWork;
 import com.aegispay.engine.calc.WorkedTime.RateSlice;
@@ -51,13 +53,29 @@ public final class AegisPayEngine {
         Hours dailyDt = Hours.ZERO;
         boolean useCalifornia = options.includeCalifornia();
 
+        if (options.enableFluctuatingWorkweek()) {
+            builder.warning("Fluctuating workweek is disabled by default and was not applied. Enabling it requires counsel review.");
+        }
+
+        int streak = 0;
+        LocalDate previous = null;
         for (DayWork day : days) {
             boolean caDay = useCalifornia && day.hasJurisdiction("US-CA");
             Hours worked = day.worked();
             totalWorked = totalWorked.plus(worked);
             straightEarnings = straightEarnings.plus(day.weightedStraightPay());
+            if (previous != null && day.date().equals(previous.plusDays(1))) {
+                streak++;
+            } else {
+                streak = 1;
+            }
+            previous = day.date();
 
-            if (caDay) {
+            if (caDay && streak >= 7) {
+                Hours firstEight = worked.min(Hours.of(8));
+                dailyOt = dailyOt.plus(firstEight);
+                dailyDt = dailyDt.plus(worked.minus(firstEight));
+            } else if (caDay) {
                 CaliforniaRules.DailySplit split = CaliforniaRules.splitDaily(worked);
                 dailyRegular = dailyRegular.plus(split.regular());
                 dailyOt = dailyOt.plus(split.ot15());
@@ -128,6 +146,24 @@ public final class AegisPayEngine {
             }
             if (rest) {
                 builder.exception(CaliforniaRules.restException(day.date()));
+            }
+        }
+
+        for (WorkPeriod.Shift shift : period.shifts()) {
+            for (EarningsLine line : SplitShiftAndReporting.premiums(shift, premiumRate, useCalifornia && shift.hasJurisdiction("US-CA"))) {
+                builder.line(line);
+            }
+            Hours shiftHours = Hours.ZERO;
+            for (var interval : shift.intervals()) {
+                if (interval.type() == WorkPeriod.IntervalType.WORK) {
+                    shiftHours = shiftHours.plus(Hours.fromDuration(java.time.Duration.between(interval.start(), interval.end())));
+                }
+            }
+            LocalDate shiftDate = shift.intervals().isEmpty()
+                    ? weekEnding
+                    : shift.intervals().get(0).start().atZone(shift.timeZone()).toLocalDate();
+            for (EarningsLine line : DifferentialEvaluator.apply(shift, shiftHours, shiftDate)) {
+                builder.line(line);
             }
         }
 

@@ -53,15 +53,16 @@ public final class WorkedTime {
     public static List<DayWork> byLocalDate(WorkPeriod period) {
         Map<LocalDate, MutableDay> days = new LinkedHashMap<>();
         for (Shift shift : period.shifts()) {
-            Money hourly = primaryHourly(shift);
             for (Interval interval : shift.intervals()) {
                 LocalDate date = interval.start().atZone(shift.timeZone()).toLocalDate();
                 MutableDay day = days.computeIfAbsent(date, d -> new MutableDay(d, shift));
                 Hours hours = Hours.fromDuration(Duration.between(interval.start(), interval.end()));
+                String job = interval.jobCode() == null ? shift.jobCode() : interval.jobCode();
+                Money hourly = rateFor(shift, job);
                 if (interval.type() == IntervalType.WORK
                         || interval.type() == IntervalType.PAID_BREAK
                         || interval.type() == IntervalType.TRAVEL) {
-                    day.addWork(interval.jobCode() == null ? shift.jobCode() : interval.jobCode(), hourly, hours);
+                    day.addWork(job, hourly, hours);
                 } else if (interval.type() == IntervalType.UNPAID_MEAL) {
                     day.unpaidMeal = day.unpaidMeal.plus(hours);
                     day.hadUnpaidMealInterval = true;
@@ -73,6 +74,14 @@ public final class WorkedTime {
             result.add(day.toDayWork());
         }
         return result;
+    }
+
+    private static Money rateFor(Shift shift, String jobCode) {
+        return shift.rates().stream()
+                .filter(r -> r.type() == RateType.HOURLY && (jobCode == null || jobCode.equals(r.jobCode())))
+                .map(PayRate::hourly)
+                .findFirst()
+                .orElseGet(() -> primaryHourly(shift));
     }
 
     private static Money primaryHourly(Shift shift) {

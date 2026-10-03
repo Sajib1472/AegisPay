@@ -121,15 +121,13 @@ class FlsaGoldenTest {
                         new PayRate("FRONT", RateType.HOURLY, Money.of("20.00"))
                 )
         );
-        // WorkedTime uses primary hourly from first HOURLY rate for all slices in current v0.1.
         WorkPeriod period = period("hygienist", List.of(shift), List.of(), List.of());
         EarningsResult result = engine.calculate(
                 period,
                 List.of(PublishedRulePack.flsa()),
                 EngineOptions.fromPacks(List.of(PublishedRulePack.flsa()))
         );
-        assertTrue(result.totals().regularHours().isGreaterThan(Hours.of(7)));
-        assertTrue(!result.totals().gross().isZero());
+        assertEquals(Money.of("240.00"), result.totals().regularPay());
     }
 
     @Test

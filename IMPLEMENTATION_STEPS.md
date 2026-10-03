@@ -516,7 +516,7 @@ If the employee says interrupted, the engine **must** generate a premium even if
 
 ## 9. Step 9 — Build the calculation engine (this is the company)
 
-Work in the `engine` module with TDD. No database. No Spring.
+Work in the `engine` module with TDD. No database. No Spring. Pipeline order is `EvaluationPipeline`; version `0.2.0`. Citations: `engine/src/main/resources/rules/ca/IWC_Wage_Order_4.md`.
 
 ### 9.1 Public API of the engine
 
