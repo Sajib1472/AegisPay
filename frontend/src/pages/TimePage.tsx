@@ -55,6 +55,7 @@ export default function TimePage() {
         <button className="primary" onClick={importCsv} disabled={!locationId}>
           Commit import
         </button>
+        {locations.length === 0 ? <p>Add a location in the wizard before importing a clock CSV.</p> : null}
         {message ? <pre className="csv">{message}</pre> : null}
         {error ? <p className="error">{error}</p> : null}
       </div>
@@ -69,13 +70,19 @@ export default function TimePage() {
             </tr>
           </thead>
           <tbody>
-            {punches.slice(0, 40).map((punch) => (
-              <tr key={punch.id}>
-                <td>{punch.adjustedAt}</td>
-                <td>{punch.punchType}</td>
-                <td>{punch.source}</td>
+            {punches.length === 0 ? (
+              <tr>
+                <td colSpan={3}>No punches yet. Paste the office manager’s clock export above — Generic 7-column, Homebase, Deputy, or Time Clock Plus.</td>
               </tr>
-            ))}
+            ) : (
+              punches.slice(0, 40).map((punch) => (
+                <tr key={punch.id}>
+                  <td>{punch.adjustedAt}</td>
+                  <td>{punch.punchType}</td>
+                  <td>{punch.source}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

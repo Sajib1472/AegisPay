@@ -126,3 +126,30 @@ pre.csv {
   border-radius: 8px;
 }
 .error { color: var(--danger); }
+
+.location-context {
+  font-size: 12px !important;
+  color: #e8d7a8 !important;
+}
+.nav select {
+  background: #1c3a56;
+  color: #f4f1ea;
+  border-color: #3a5168;
+}
+.session-warn {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: #9b2335;
+  color: white;
+  padding: 8px 16px;
+  text-align: center;
+}
+@media print {
+  .nav, .session-warn, button { display: none !important; }
+  .shell { display: block; }
+  .main { padding: 0; }
+  body { background: white; }
+}

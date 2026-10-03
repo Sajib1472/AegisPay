@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, getSession, type AccountView, type Location, type PayPeriod, type Person } from "../api";
+import { api, getSession, type AccountView, type Location, type PayPeriod, type Person, type RiskView } from "../api";
 
 export default function HomePage() {
   const session = getSession();
@@ -8,15 +8,17 @@ export default function HomePage() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [periods, setPeriods] = useState<PayPeriod[]>([]);
   const [account, setAccount] = useState<AccountView | null>(null);
+  const [risk, setRisk] = useState<RiskView | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all([api.people(), api.locations(), api.periods(), api.account()])
-      .then(([p, l, r, a]) => {
+    Promise.all([api.people(), api.locations(), api.periods(), api.account(), api.risk().catch(() => null)])
+      .then(([p, l, r, a, k]) => {
         setPeople(p);
         setLocations(l);
         setPeriods(r);
         setAccount(a);
+        setRisk(k);
       })
       .catch((err) => setError(err.message));
   }, []);
@@ -24,6 +26,9 @@ export default function HomePage() {
   const openPeriod = periods.find((p) =>
     ["DRAFT", "CALCULATED", "EXCEPTIONS_PENDING", "OPEN"].includes(p.status)
   );
+  const otPct = risk && Number(risk.gross) > 0
+    ? ((Number(risk.overtimePay) / Number(risk.gross)) * 100).toFixed(1)
+    : "0.0";
 
   return (
     <div>
@@ -52,13 +57,30 @@ export default function HomePage() {
           <span>Open pay period</span>
           <b>{openPeriod ? `${openPeriod.startDate}` : "None"}</b>
         </div>
+        {owner && risk ? (
+          <>
+            <div className="card stat">
+              <span>Premiums generated</span>
+              <b>{risk.premiumsGenerated}</b>
+            </div>
+            <div className="card stat">
+              <span>OT as % of dollars</span>
+              <b>{otPct}%</b>
+            </div>
+            <div className="card stat">
+              <span>Unapproved countdown</span>
+              <b>{risk.daysUntilPeriodEnd < 0 ? "—" : `${risk.daysUntilPeriodEnd}d`}</b>
+            </div>
+          </>
+        ) : null}
       </div>
       {owner ? (
         <div className="card">
           <h3>Owner risk dashboard</h3>
           <p>
-            You sign the card and the lawsuit. Your office manager lives in the exception queue. Staff keep punching the
-            same clock — they do not need this app in v1.
+            You sign the card and the lawsuit. Your office manager lives in the exception queue
+            {risk ? ` (${risk.blockerExceptions} blockers, ${risk.unapprovedPeriods} open periods)` : ""}. Staff keep
+            punching the same clock — they do not need this app in v1.
           </p>
           <p className="disclaimer">{account?.positioning[0]}</p>
         </div>
@@ -72,6 +94,11 @@ export default function HomePage() {
           </ol>
         </div>
       )}
+      {people.length === 0 ? (
+        <div className="card">
+          <p>Next file to upload: a people CSV in the wizard, then a clock CSV on Time. There is no empty-state illustration — just the next file.</p>
+        </div>
+      ) : null}
       <p className="disclaimer">
         AegisPay does not remit taxes or move money. It makes the hours you send to payroll legally explainable.
       </p>

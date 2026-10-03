@@ -116,6 +116,24 @@ export type BonusEntry = {
   payPeriodId?: string | null;
 };
 
+export type LaborReport = {
+  runId?: string | null;
+  byLocation: { name: string; amount: number }[];
+  byJob: { name: string; amount: number }[];
+  gross: number;
+  otPay: number;
+  premiums: number;
+};
+
+export type RiskView = {
+  premiumsGenerated: number;
+  overtimePay: number;
+  gross: number;
+  daysUntilPeriodEnd: number;
+  blockerExceptions: number;
+  unapprovedPeriods: number;
+};
+
 export type AccountView = {
   tenantName: string;
   plan: string;
@@ -258,6 +276,14 @@ export const api = {
     ),
   catalog: () => request<{ plans: { code: string; name: string; who: string; monthlyCents: number; maxLocations: number; maxEmployees: number; support: string; auditPackCents: number }[]; noFreeForeverPlan: string; positioning: string[] }>("/api/v1/catalog"),
   leaveBalances: () => request<{ personId: string; policyCode: string; hours: number; asOf: string }[]>("/api/v1/leave/balances"),
+  laborReport: () => request<LaborReport>("/api/v1/reports/labor"),
+  risk: () => request<RiskView>("/api/v1/reports/risk"),
+  acceptInvite: (token: string, displayName: string, password: string) =>
+    request<AuthResponse>("/api/v1/auth/accept-invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, displayName, password })
+    }),
   generateAuditPack: (runId: string) =>
     request<{ sha256: string; bytes: number; fileName: string }>(`/api/v1/pay-runs/${runId}/audit-pack`, { method: "POST" }),
   downloadAuditPack: async (runId: string) => {

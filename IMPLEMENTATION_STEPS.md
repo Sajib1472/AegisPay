@@ -739,6 +739,8 @@ Do not build a full PTO request/approval product until someone pays more for it.
 
 ## 13. Step 13 — Frontend that looks like software someone pays $300/month for
 
+Light paper theme, owner risk home, reports, help drawers, 30-minute payroll session watchdog, location context in the nav, invite-accept screen. Destructive copy stays plain English.
+
 ### 13.1 Information architecture
 
 - **Home (owner):** this week’s risk: premiums generated, OT as % of hours, unapproved period countdown
