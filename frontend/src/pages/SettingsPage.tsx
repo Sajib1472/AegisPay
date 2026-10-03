@@ -44,6 +44,19 @@ export default function SettingsPage() {
             </p>
             <p>Audit pack add-on ($99/run): {account.auditPack ? "on" : "off"}</p>
             <p>Support: {account.catalog.support}</p>
+            <p>
+              <button className="primary" onClick={() => api.checkout("GROUP", false).then((r) => (window.location.href = r.url))}>
+                Pay Group monthly ($299)
+              </button>{" "}
+              <button className="ghost" onClick={() => api.checkout("GROUP", true).then((r) => (window.location.href = r.url))}>
+                Group annual (2 months free)
+              </button>
+            </p>
+            <p>
+              <button className="ghost" onClick={() => api.billingPortal().then((r) => (window.location.href = r.url))}>
+                Update card or cancel (Stripe portal)
+              </button>
+            </p>
           </div>
           <div className="card">
             <h3>Who this product is for</h3>

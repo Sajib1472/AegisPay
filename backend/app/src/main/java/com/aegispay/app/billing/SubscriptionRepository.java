@@ -7,4 +7,6 @@ import java.util.UUID;
 
 public interface SubscriptionRepository extends JpaRepository<Subscription, UUID> {
     Optional<Subscription> findByTenantId(UUID tenantId);
+
+    Optional<Subscription> findByStripeCustomerId(String stripeCustomerId);
 }

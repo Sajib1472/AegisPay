@@ -76,3 +76,10 @@ aegispay:
     commit: ${GIT_COMMIT:dev}
   storage:
     local-dir: ${AEGISPAY_OBJECT_DIR:${user.home}/.aegispay/objects}
+  stripe:
+    secret-key: ${STRIPE_SECRET_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_local}
+    price-group-monthly: ${STRIPE_PRICE_GROUP_MONTHLY:price_group_monthly}
+    price-group-annual: ${STRIPE_PRICE_GROUP_ANNUAL:price_group_annual}
+    price-network-monthly: ${STRIPE_PRICE_NETWORK_MONTHLY:price_network_monthly}
+    price-network-annual: ${STRIPE_PRICE_NETWORK_ANNUAL:price_network_annual}

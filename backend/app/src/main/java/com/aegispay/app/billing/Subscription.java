@@ -34,6 +34,12 @@ public class Subscription {
     @Column(name = "current_period_end")
     private Instant currentPeriodEnd;
 
+    @Column(name = "grace_until")
+    private Instant graceUntil;
+
+    @Column(nullable = false)
+    private boolean annual;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -86,5 +92,25 @@ public class Subscription {
 
     public void setStripeSubscriptionId(String stripeSubscriptionId) {
         this.stripeSubscriptionId = stripeSubscriptionId;
+    }
+
+    public Instant getGraceUntil() {
+        return graceUntil;
+    }
+
+    public void setGraceUntil(Instant graceUntil) {
+        this.graceUntil = graceUntil;
+    }
+
+    public boolean isAnnual() {
+        return annual;
+    }
+
+    public void setAnnual(boolean annual) {
+        this.annual = annual;
+    }
+
+    public String getStripeCustomerId() {
+        return stripeCustomerId;
     }
 }

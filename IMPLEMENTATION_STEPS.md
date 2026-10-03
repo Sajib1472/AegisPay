@@ -786,6 +786,8 @@ Do not start with a marketing landing page. The app converting a pilot is more i
 
 ## 14. Step 14 — Billing (if you cannot charge, it is not a SaaS)
 
+Stripe Checkout + Customer Portal + signed webhooks (`StripeSignature`). Failed invoice: 7-day grace, then `READ_ONLY`. Annual is a separate Price. Comp features via `tenant_entitlement`.
+
 ### 14.1 Stripe
 
 - Stripe Checkout for first subscription

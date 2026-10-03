@@ -23,19 +23,22 @@ public class EntitlementService {
     private final PersonRepository people;
     private final PayPeriodRepository periods;
     private final TenantEntitlementRepository extras;
+    private final SubscriptionRepository subscriptions;
 
     public EntitlementService(
             TenantRepository tenants,
             LocationRepository locations,
             PersonRepository people,
             PayPeriodRepository periods,
-            TenantEntitlementRepository extras
+            TenantEntitlementRepository extras,
+            SubscriptionRepository subscriptions
     ) {
         this.tenants = tenants;
         this.locations = locations;
         this.people = people;
         this.periods = periods;
         this.extras = extras;
+        this.subscriptions = subscriptions;
     }
 
     public AccountView current() {
@@ -138,7 +141,21 @@ public class EntitlementService {
     }
 
     private Tenant tenant() {
-        return tenants.findById(TenantContext.requireTenantId()).orElseThrow();
+        Tenant tenant = tenants.findById(TenantContext.requireTenantId()).orElseThrow();
+        stripeGrace(tenant);
+        return tenant;
+    }
+
+    private void stripeGrace(Tenant tenant) {
+        subscriptions.findByTenantId(tenant.getId()).ifPresent(sub -> {
+            if ("PAST_DUE".equals(sub.getStatus())
+                    && sub.getGraceUntil() != null
+                    && Instant.now().isAfter(sub.getGraceUntil())
+                    && !"READ_ONLY".equals(tenant.getStatus())) {
+                tenant.setStatus("READ_ONLY");
+                tenants.save(tenant);
+            }
+        });
     }
 
     public record AccountView(

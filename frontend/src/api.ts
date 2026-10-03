@@ -284,6 +284,13 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token, displayName, password })
     }),
+  checkout: (plan: string, annual: boolean) =>
+    request<{ url: string }>("/api/v1/billing/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan, annual })
+    }),
+  billingPortal: () => request<{ url: string }>("/api/v1/billing/portal", { method: "POST" }),
   generateAuditPack: (runId: string) =>
     request<{ sha256: string; bytes: number; fileName: string }>(`/api/v1/pay-runs/${runId}/audit-pack`, { method: "POST" }),
   downloadAuditPack: async (runId: string) => {
