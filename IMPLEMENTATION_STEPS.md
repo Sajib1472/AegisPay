@@ -887,6 +887,8 @@ When a real customer finds a bug, add their de-identified period as a fixture na
 
 ## 17. Step 17 — Deploy, environments, and runbooks
 
+`local` / `staging` / `prod` profiles. Compose: Postgres 16 + Redis 7. Runbooks in `runbooks/`. Observability: `/actuator/health`, structured logs, optional Sentry DSN. No SOC2 claim in year one.
+
 ### 17.1 Environments
 
 - `local` — docker compose

@@ -1,0 +1,21 @@
+spring:
+  config:
+    activate:
+      on-profile: staging
+
+aegispay:
+  seed: true
+  cors:
+    origin: ${FRONTEND_ORIGIN:https://staging.aegispay.example}
+  stripe:
+    secret-key: ${STRIPE_SECRET_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+sentry:
+  dsn: ${SENTRY_DSN:}

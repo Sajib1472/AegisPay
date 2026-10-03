@@ -20,5 +20,44 @@ services:
     ports:
       - "6379:6379"
 
+  # App container is built after `./gradlew :app:bootJar`. Staging uses Stripe test keys.
+  # app:
+  #   image: aegispay-app:local
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_started
+  #   environment:
+  #     SPRING_PROFILES_ACTIVE: local
+  #     DATABASE_URL: jdbc:postgresql://postgres:5432/aegispay
+  #     REDIS_HOST: redis
+  #     AEGISPAY_SEED: "true"
+  #   ports:
+  #     - "8080:8080"
+
+volumes:
+  aegispay_pg:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: aegispay
+      POSTGRES_USER: aegispay
+      POSTGRES_PASSWORD: aegispay
+    ports:
+      - "5432:5432"
+    volumes:
+      - aegispay_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aegispay -d aegispay"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
 volumes:
   aegispay_pg:

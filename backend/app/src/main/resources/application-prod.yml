@@ -1,23 +1,26 @@
 spring:
-  jpa:
-    show-sql: false
-    hibernate:
-      ddl-auto: validate
-  flyway:
-    enabled: true
-
-server:
-  error:
-    include-message: never
-    include-stacktrace: never
-  forward-headers-strategy: framework
-
-logging:
-  structured:
-    format:
-      console: ecs
+  config:
+    activate:
+      on-profile: prod
 
 aegispay:
   seed: false
-  redis:
-    required: true
+  cors:
+    origin: ${FRONTEND_ORIGIN}
+  jwt:
+    secret: ${JWT_SECRET}
+  stripe:
+    secret-key: ${STRIPE_SECRET_KEY}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+sentry:
+  dsn: ${SENTRY_DSN:}
